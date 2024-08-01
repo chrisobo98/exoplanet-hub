@@ -11,17 +11,22 @@
   },
   "dependencies": {
     "@pinia/nuxt": "^0.5.2",
+    "@primevue/themes": "^4.0.3",
     "axios": "^1.7.2",
     "d3": "^7.9.0",
     "nuxt": "^3.12.4",
     "pinia": "^2.2.0",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.0.3",
     "vue": "latest"
   },
   "overrides": {
     "vue": "latest"
   },
   "devDependencies": {
+    "@primevue/nuxt-module": "^4.0.3",
     "@types/d3": "^7.4.3",
+    "sass": "^1.77.8",
     "typescript": "^5.5.4"
   }
 }

@@ -1,13 +1,15 @@
 <template>
   <div>
-    <header>
-      <h1>Exoplanet Discovery Hub</h1>
-    </header>
+    <Header />
     <main>
       <NuxtPage />
     </main>
   </div>
 </template>
+
+<script setup lang="ts">
+import Header from "@/layouts/Header.vue";
+</script>
 
 <style scoped>
 header {

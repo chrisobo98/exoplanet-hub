@@ -3,7 +3,8 @@ import axios from 'axios';
 
 export const useExoplanetStore = defineStore('exoplanetStore', {
   state: () => ({
-    exoplanets: [] as any[]
+    exoplanets: [] as any[],
+    globalFilter: '' as string
   }),
   actions: {
     async fetchExoplanets() {
