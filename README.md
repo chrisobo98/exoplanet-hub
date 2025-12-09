@@ -1,118 +1,238 @@
-# Exoplanet Discovery
+# 🌌 Exoplanet Discovery Hub
 
-This project visualizes data from the NASA Exoplanet Archive, specifically focusing on exoplanets discovered by the TESS (Transiting Exoplanet Survey Satellite). It includes two primary components: `ExoplanetTable.vue` and `ExoplanetVisualization.vue`.
+A modern, interactive web application for exploring exoplanets discovered by NASA's TESS (Transiting Exoplanet Survey Satellite) mission. Features include real-time 3D visualization, mission planning calculations, and habitable zone analysis—all powered by live data from the NASA Exoplanet Archive.
 
-## Components
+![Exoplanet Discovery Hub](https://img.shields.io/badge/Status-Active-success)
+![Nuxt 3](https://img.shields.io/badge/Nuxt-3.12.4-00DC82)
+![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.5.4-3178C6)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.7-38B2AC)
 
-### ExoplanetTable.vue
+## 🚀 Features
 
-This component is responsible for displaying a table of exoplanet data fetched from the NASA Exoplanet Archive.
+### 1. **Interactive Overview**
+- Real-time filtering by stellar type and distance
+- Comprehensive data table with 20+ exoplanet properties
+- Habitable zone status indicators
+- Summary statistics dashboard
 
-#### Features:
-- Fetches data from the NASA Exoplanet Archive using the `exoplanetStore` store.
-- Displays the exoplanets' names, masses, right ascensions, and declinations in a tabular format.
-- Includes a button to load the exoplanet data.
-- The number of loaded exoplanets is displayed above the table.
+### 2. **3D Star Map**
+- Navigate through space with mouse drag controls
+- Auto-rotation mode
+- Zoom in/out capabilities
+- Color-coded by habitability (green = habitable, red = too hot, blue = too cold)
+- Real 3D coordinates calculated from RA/Dec/Distance
 
-#### Detailed Breakdown:
+### 3. **Mission Planning Calculator**
+- Select any TESS-discovered exoplanet
+- Calculate travel times at different velocities (0.1c, 0.5c, 0.9c)
+- Compare with conventional rocket technology
+- Mission feasibility assessment
 
-- **Template:**
-  - Contains a button to trigger data loading.
-  - Displays the count of exoplanets.
-  - Renders a table with columns for planet name, mass, right ascension, and declination.
-  - Uses a `v-for` directive to iterate over the list of exoplanets and display each one in a row.
+### 4. **Habitable Zone Analysis**
+- Scientific habitable zone boundary calculations
+- Per-planet habitability classification
+- Stellar properties display
+- System-wide analysis
 
-- **Script:**
-  - Utilizes the `setup` script to define component logic.
-  - Imports the `useExoplanetStore` store from Pinia.
-  - Defines a `ref` to hold the exoplanet data.
-  - Implements a `loadData` function to fetch and assign the exoplanet data from the store.
+## 🎯 What's New (v2.0)
 
-- **Styles:**
-  - Basic table styling for width, border, padding, and background color.
-  - Button styling for appearance and hover effects.
+### Major Improvements from v1.0
+- ✅ **Eliminated Pinia dependency** → Lightweight Vue 3 composables
+- ✅ **Fixed SSR initialization errors** → Disabled SSR for optimal performance
+- ✅ **Modern UI/UX redesign** → Aerospace-focused dark theme with glassmorphism
+- ✅ **3D Visualization** → Custom Canvas-based star map with perspective projection
+- ✅ **Mission Planning** → Theoretical interstellar mission calculations
+- ✅ **Habitable Zone Analysis** → Scientific habitability classification
+- ✅ **Enhanced Data** → 20+ properties per planet vs. 4 previously
+- ✅ **Better Performance** → Removed PrimeVue, optimized rendering
 
-### ExoplanetVisualization.vue
+### Technical Upgrades
+- Vue 3 Composition API throughout
+- TypeScript with strict typing
+- Tailwind CSS for styling
+- lucide-vue-next for icons
+- Custom 3D rendering engine
 
-This component is responsible for visualizing the exoplanet data in a scatter plot using D3.js.
+## 📊 Data Sources
 
-#### Features:
-- Fetches data from the NASA Exoplanet Archive using the `exoplanetStore` store.
-- Visualizes the exoplanets' right ascension and declination using a scatter plot.
-- Dynamically adjusts the chart size based on the container's dimensions to ensure responsiveness.
-- Uses `ResizeObserver` to handle resizing of the chart.
+All data comes directly from the **NASA Exoplanet Archive** via their TAP (Table Access Protocol) service:
+- **Source**: https://exoplanetarchive.ipac.caltech.edu/
+- **Mission**: TESS (Transiting Exoplanet Survey Satellite)
+- **Query**: Real-time SQL queries to the `ps` (Planetary Systems) table
+- **Format**: JSON
+- **Update Frequency**: Live data from NASA's continuously updated archive
 
-#### Detailed Breakdown:
+### Data Fields (20+ properties per planet)
+- **Identifiers**: Planet name, host star name
+- **Discovery**: Year, facility, detection method
+- **Planetary Properties**: Radius, mass, orbital period, semi-major axis, eccentricity, temperature
+- **Stellar Properties**: Temperature, radius, mass, spectral type
+- **Positional Data**: Right ascension, declination, distance
+- **Calculated**: 3D Cartesian coordinates, habitable zone status
 
-- **Template:**
-  - Contains a `div` element with a reference (`ref`) to attach the D3 chart.
+## 🧮 Scientific Calculations
 
-- **Script:**
-  - Imports necessary modules and functions from D3 and Vue.
-  - Utilizes the `setup` script to define component logic.
-  - Imports the `useExoplanetStore` store from Pinia.
-  - Defines a `ref` for the chart container and a `ResizeObserver` to handle dynamic resizing.
-  - Implements a `drawChart` function to create and update the D3 scatter plot.
-  - Sets up `onMounted` and `onUnmounted` lifecycle hooks to fetch data, draw the chart, and manage the `ResizeObserver`.
+### Habitable Zone Boundaries
+Uses the **Stefan-Boltzmann Law** to calculate where liquid water could exist:
 
-- **Styles:**
-  - Sets the chart container to take up the full width and a specified height (50vh).
-  - Ensures the chart is responsive by observing the container size changes.
+```typescript
+// Stellar luminosity (relative to Sun)
+L = (R_star / R_sun)² × (T_star / T_sun)⁴
 
-## Understanding Exoplanet Data
+// Conservative habitable zone
+Inner Boundary = √(L / 1.1)  // Runaway greenhouse limit
+Outer Boundary = √(L / 0.53) // Maximum greenhouse limit
+```
 
-Here are some simple explanations for the data we show in the table and chart:
+### 3D Coordinate Conversion
+Converts astronomical coordinates to Cartesian for visualization:
 
-- **Planet Name**: This is the name of the exoplanet, like TOI-849 b. It's like naming a star or a planet.
+```typescript
+// RA, Dec, Distance → X, Y, Z
+const raRad = ra * π / 180
+const decRad = dec * π / 180
 
-- **Mass (Earth Masses)**: This tells us how heavy the exoplanet is compared to Earth. If an exoplanet has a mass of 1 Earth mass, it weighs about the same as Earth. If it has a mass of 2 Earth masses, it is twice as heavy as Earth.
+x = distance × cos(dec) × cos(ra)
+y = distance × cos(dec) × sin(ra)
+z = distance × sin(dec)
+```
 
-- **Right Ascension (RA)**: Imagine the night sky as a big map. Right ascension is like the planet's address on that map, telling us where to look from left to right. It's similar to how we use longitude on Earth to find places east or west.
+### Mission Planning
+Travel time calculations at fractions of light speed:
 
-- **Declination (Dec)**: This is another part of the exoplanet's address in the sky, but it tells us where to look up and down. It's like latitude on Earth, which helps us find places north or south.
+```typescript
+travel_time = distance_light_years / velocity_fraction_of_c
 
-### Putting It All Together in a Scatter Plot
-In our project, we use a scatter plot to show where different exoplanets (planets outside our solar system) are in the sky:
+// Example: 100 light years at 0.1c = 1000 years
+```
 
-- **Right Ascension (RA)**: This will be on the horizontal (left to right) axis.
-- **Declination (Dec)**: This will be on the vertical (up and down) axis.
-- Each dot on the scatter plot represents an exoplanet. By looking at the plot, you can see where each exoplanet is located in the sky.
+## 📁 Project Structure
 
-## Project Structure
+```
+exoplanet-discovery/
+├── app.vue                          # Main layout with header/footer
+├── pages/
+│   └── index.vue                    # Tab navigation
+├── components/
+│   ├── ExoplanetOverview.vue        # Overview tab
+│   ├── StarMap3D.vue                # 3D visualization
+│   ├── MissionCalculator.vue        # Mission planning
+│   ├── HabitableZoneAnalysis.vue    # Habitability analysis
+│   └── [Helper Components]          # UI components
+├── composables/
+│   └── useExoplanets.ts             # Main data logic
+├── types/
+│   └── exoplanet.ts                 # TypeScript definitions
+├── server/api/
+│   └── exoplanets.ts                # NASA API proxy
+└── nuxt.config.ts                   # Configuration
+```
 
-The project structure is organized as follows:
+## 🚀 Getting Started
 
-- **components/**
-  - `ExoplanetTable.vue`: Table component for displaying exoplanet data.
-  - `ExoplanetVisualization.vue`: Visualization component for displaying a scatter plot of exoplanet data.
+### Prerequisites
+- Node.js 18+ or Node.js 20+
+- npm or yarn
 
-- **pages/**
-  - `index.vue`: Main page that includes the table and visualization components.
+### Installation
 
-- **server/api/**
-  - `exoplanets.ts`: API endpoint to fetch exoplanet data from the NASA Exoplanet Archive.
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/exoplanet-discovery.git
+cd exoplanet-discovery
 
-- **stores/**
-  - `exoplanetStore.ts`: Pinia store for managing and fetching exoplanet data.
+# Install dependencies
+npm install
+```
 
-- **types/**
-  - `d3.d.ts`: TypeScript declarations for D3.js.
-  - `exoplanet.ts`: TypeScript type definitions for exoplanet data.
+### Development
 
-- **public/**
-  - Contains static assets like `favicon.ico`.
+```bash
+# Start development server
+npm run dev
+# Server runs on http://localhost:3000 (or 3001 if 3000 is busy)
+```
 
-- **app.vue**: Root Vue component.
+### Production
 
-- **nuxt.config.ts**: Nuxt.js configuration file.
+```bash
+# Build for production
+npm run build
 
-## Running the Project
+# Preview production build
+npm run preview
 
-1. **Install dependencies**:
-   ```sh
-   npm install
+# Generate static site
+npm run generate
+```
 
+## 🛠️ Tech Stack
 
-## Future Improvements
-- `Enhanced Filtering`: Add more complex filtering options for the exoplanet data.
-- `Interactive Charts`: Improve the D3 visualization to include tooltips and interactive elements.
+| Technology | Purpose |
+|-----------|---------|
+| **Nuxt 3** | Vue.js framework with SSR disabled |
+| **Vue 3** | Reactive UI framework |
+| **TypeScript** | Type safety |
+| **Tailwind CSS** | Utility-first styling |
+| **Axios** | HTTP client for NASA API |
+| **lucide-vue-next** | Icon library |
+| **Chart.js** | Charting capabilities |
+| **HTML5 Canvas** | Custom 3D rendering |
+
+## 📖 Documentation
+
+For detailed documentation including:
+- Architecture overview
+- Component specifications
+- Data flow diagrams
+- API integration details
+- Scientific formulas
+- Future roadmap
+
+See **[DOCUMENTATION.md](./DOCUMENTATION.md)**
+
+## 🌟 Showcase
+
+### What Makes This Project Stand Out
+
+1. **Real Data, Real Time**: Live connection to NASA's Exoplanet Archive
+2. **Scientific Accuracy**: Habitable zone calculations based on astrophysics
+3. **Interactive 3D**: Custom-built 3D renderer without heavyweight libraries
+4. **Mission Planning**: Theoretical interstellar travel calculations
+5. **Modern UI/UX**: Aerospace-inspired design with smooth animations
+6. **Performance**: Optimized rendering, no unnecessary dependencies
+
+### Perfect For
+
+- 🎓 **Students**: Learn about exoplanets and space exploration
+- 🔭 **Astronomy Enthusiasts**: Explore real TESS discoveries
+- 🚀 **Aerospace Professionals**: Understand mission planning concepts
+- 💻 **Developers**: Modern Vue 3 + Nuxt architecture example
+- 📊 **Data Visualization**: Advanced interactive visualization techniques
+
+## 🤝 Contributing
+
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📝 License
+
+Data from NASA Exoplanet Archive (public domain).
+Code licensed under MIT.
+
+## 🙏 Credits
+
+- **Data**: NASA Exoplanet Archive / Caltech / JPL
+- **Mission**: TESS (Transiting Exoplanet Survey Satellite)
+- **Framework**: Nuxt 3 / Vue 3
+- **Design Inspiration**: Aerospace mission control interfaces
+
+---
+
+**Built with** ❤️ **for space exploration**
+
+Last Updated: December 2025 | Version 2.0.0
