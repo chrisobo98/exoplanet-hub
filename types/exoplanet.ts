@@ -6,7 +6,7 @@ export interface Exoplanet {
   // Discovery
   disc_year: number;
   disc_facility: string;
-  disc_method: string;
+  discoverymethod: string;
 
   // Planetary properties
   pl_rade: number; // Planet radius (Earth radii)

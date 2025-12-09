@@ -13,7 +13,7 @@
       </div>
     </header>
 
-    <!-- Main Content -->}
+    <!-- Main Content -->
     <main>
       <NuxtPage />
     </main>

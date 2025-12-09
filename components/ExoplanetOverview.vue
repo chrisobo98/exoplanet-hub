@@ -111,7 +111,9 @@ const minDistance = ref<number>(0);
 const maxDistance = ref<number>(5000);
 
 onMounted(async () => {
-  await fetchExoplanets();
+  if (exoplanets.value.length === 0) {
+    await fetchExoplanets();
+  }
 });
 
 const stellarTypes = computed(() => {

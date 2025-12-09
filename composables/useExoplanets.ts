@@ -14,7 +14,7 @@ export const useExoplanets = () => {
     try {
       const response = await axios.get('/api/exoplanets', {
         params: {
-          query: `select pl_name, hostname, disc_year, disc_facility, disc_method,
+          query: `select pl_name, hostname, disc_year, disc_facility, discoverymethod,
                   pl_rade, pl_radj, pl_masse, pl_massj, pl_orbper, pl_orbsmax, pl_orbeccen, pl_eqt,
                   st_teff, st_rad, st_mass, st_spectype, ra, dec, sy_dist
                   from ps
