@@ -21,7 +21,7 @@
         </template>
         <template #empty> No exoplanets found. </template>
         <template #loading> Loading exoplanet data. Please wait. </template>
-        <template #footer>Total TESS Confirmed Exoplanets: {{ exoplanets.length }}</template>
+        <template #footer>Total TESS Confirmed Exoplanets: {{ exoplanets?.length || 0 }}</template>
         <Column
           v-for="column in columns"
           :key="column.key"
@@ -40,10 +40,11 @@
   
   <script setup lang="ts">
   import { ref, watch, defineEmits } from "vue";
-  import { useExoplanetStore } from "@/stores/exoplanetStore";
-  
+  import { useExoplanets } from "@/composables/useExoplanets";
+
   const emit = defineEmits(['select', 'unselect']);
-  
+  const { exoplanets: storeExoplanets, globalFilter: storeGlobalFilter, fetchExoplanets } = useExoplanets();
+
   // Define the columns for the table
   const columns = [
     { key: "pl_name", label: "Name", frozen: true },
@@ -72,9 +73,8 @@
     { key: "sy_mnum", label: "Number of Moons" },
     // Add more columns as needed
   ];
-  
+
   const exoplanets = ref<any[]>([]);
-  const exoplanetStore = useExoplanetStore();
   const globalFilter = ref<string>("");
   const loading = ref<boolean>(false);
   const sortField = ref<string>("pl_name");
@@ -84,28 +84,26 @@
     "disc_method",
     "disc_facility",
   ];
-  
+
   const loadData = async () => {
     loading.value = true;
-    await exoplanetStore.fetchExoplanets();
-    exoplanets.value = exoplanetStore.exoplanets.sort((a, b) =>
+    await fetchExoplanets();
+    exoplanets.value = storeExoplanets.value.sort((a, b) =>
       a.pl_name.localeCompare(b.pl_name)
     );
     loading.value = false;
   };
-  
+
   const onRowSelect = (event) => {
     emit('select', event.data);
   };
-  
+
   const onRowUnselect = (event) => {
     emit('unselect', event.data);
   };
-  
+
   watch(globalFilter, (newValue) => {
-    exoplanetStore.$patch((state) => {
-      state.globalFilter = newValue;
-    });
+    storeGlobalFilter.value = newValue;
   });
   </script>
   

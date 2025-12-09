@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import * as d3 from "d3";
 import { onMounted, ref, onUnmounted, watch } from "vue";
-import { useExoplanetStore } from "@/stores/exoplanetStore";
+import { useExoplanets } from "@/composables/useExoplanets";
 import type { Exoplanet } from "@/types/exoplanet";
 
 const props = defineProps({
@@ -14,15 +14,15 @@ const props = defineProps({
 });
 
 const chart = ref<HTMLElement | null>(null);
-const exoplanetStore = useExoplanetStore();
 const loading = ref<boolean>(true);
+const { exoplanets, fetchExoplanets } = useExoplanets();
 
 let resizeObserver: ResizeObserver | null = null;
 
 const drawStarMap = () => {
   if (!chart.value) return;
 
-  const data: Exoplanet[] = exoplanetStore.exoplanets;
+  const data: Exoplanet[] = exoplanets.value;
   const width = 1200;  // Increase the width to ensure more area is covered
   const height = 1200; // Increase the height to ensure more area is covered
   const cx = width / 2;
@@ -215,7 +215,7 @@ const handleResize = () => {
 
 onMounted(() => {
   loading.value = true;
-  exoplanetStore.fetchExoplanets().then(() => {
+  fetchExoplanets().then(() => {
     drawStarMap();
     resizeObserver = new ResizeObserver(handleResize);
     if (chart.value) {
