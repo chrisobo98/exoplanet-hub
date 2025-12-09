@@ -178,30 +178,32 @@ components/*.vue
 ### 2. NASA Exoplanet Archive Query
 ```sql
 SELECT
-  pl_name,           -- Planet name
-  hostname,          -- Host star name
-  disc_year,         -- Discovery year
-  disc_facility,     -- Discovery facility
-  disc_method,       -- Detection method
-  pl_rade,           -- Planet radius (Earth radii)
-  pl_radj,           -- Planet radius (Jupiter radii)
-  pl_masse,          -- Planet mass (Earth masses)
-  pl_massj,          -- Planet mass (Jupiter masses)
-  pl_orbper,         -- Orbital period (days)
-  pl_orbsmax,        -- Semi-major axis (AU)
-  pl_orbeccen,       -- Orbital eccentricity
-  pl_eqt,            -- Equilibrium temperature (K)
-  st_teff,           -- Stellar temperature (K)
-  st_rad,            -- Stellar radius (Solar radii)
-  st_mass,           -- Stellar mass (Solar masses)
-  st_spectype,       -- Stellar spectral type
-  ra,                -- Right ascension
-  dec,               -- Declination
-  sy_dist            -- Distance (parsecs)
+  pl_name,           -- Planet name (e.g., "TOI-700 d")
+  hostname,          -- Host star name (e.g., "TOI-700")
+  disc_year,         -- Discovery year (e.g., 2020)
+  disc_facility,     -- Discovery facility (e.g., "Transiting Exoplanet Survey Satellite (TESS)")
+  discoverymethod,   -- Detection method (e.g., "Transit", "Radial Velocity")
+  pl_rade,           -- Planet radius in Earth radii (1.0 = Earth-sized)
+  pl_radj,           -- Planet radius in Jupiter radii (1.0 = Jupiter-sized)
+  pl_masse,          -- Planet mass in Earth masses (1.0 = Earth mass)
+  pl_massj,          -- Planet mass in Jupiter masses (1.0 = Jupiter mass)
+  pl_orbper,         -- Orbital period in days (365.25 = 1 Earth year)
+  pl_orbsmax,        -- Semi-major axis in AU (1.0 = Earth-Sun distance)
+  pl_orbeccen,       -- Orbital eccentricity (0 = circular, 0.9 = highly elliptical)
+  pl_eqt,            -- Equilibrium temperature in Kelvin (288K = Earth's temp)
+  st_teff,           -- Stellar effective temperature in Kelvin (5778K = Sun)
+  st_rad,            -- Stellar radius in Solar radii (1.0 = Sun-sized)
+  st_mass,           -- Stellar mass in Solar masses (1.0 = Sun mass)
+  st_spectype,       -- Stellar spectral type (e.g., "G2V" = Sun-like, "M3" = red dwarf)
+  ra,                -- Right ascension in degrees (0-360)
+  dec,               -- Declination in degrees (-90 to +90)
+  sy_dist            -- System distance in parsecs (1 parsec = 3.262 light years)
 FROM ps
-WHERE disc_facility LIKE '%TESS%'
-  AND default_flag = 1
+WHERE disc_facility LIKE '%TESS%'  -- Only TESS discoveries
+  AND default_flag = 1             -- Only default (best) parameters per planet
 ```
+
+**Note**: The field name is `discoverymethod` (no underscore), not `disc_method`.
 
 ### 3. Data Processing
 ```typescript
