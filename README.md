@@ -11,12 +11,14 @@ A modern, interactive web application for exploring exoplanets discovered by NAS
 ## 🚀 Features
 
 ### 1. **Interactive Overview**
+
 - Real-time filtering by stellar type and distance
 - Comprehensive data table with 20+ exoplanet properties
 - Habitable zone status indicators
 - Summary statistics dashboard
 
 ### 2. **3D Star Map**
+
 - Navigate through space with mouse drag controls
 - Auto-rotation mode
 - Zoom in/out capabilities
@@ -24,12 +26,14 @@ A modern, interactive web application for exploring exoplanets discovered by NAS
 - Real 3D coordinates calculated from RA/Dec/Distance
 
 ### 3. **Mission Planning Calculator**
+
 - Select any TESS-discovered exoplanet
 - Calculate travel times at different velocities (0.1c, 0.5c, 0.9c)
 - Compare with conventional rocket technology
 - Mission feasibility assessment
 
 ### 4. **Habitable Zone Analysis**
+
 - Scientific habitable zone boundary calculations
 - Per-planet habitability classification
 - Stellar properties display
@@ -38,6 +42,7 @@ A modern, interactive web application for exploring exoplanets discovered by NAS
 ## 🎯 What's New (v2.0)
 
 ### Major Improvements from v1.0
+
 - ✅ **Eliminated Pinia dependency** → Lightweight Vue 3 composables
 - ✅ **Fixed SSR initialization errors** → Disabled SSR for optimal performance
 - ✅ **Modern UI/UX redesign** → Aerospace-focused dark theme with glassmorphism
@@ -48,6 +53,7 @@ A modern, interactive web application for exploring exoplanets discovered by NAS
 - ✅ **Better Performance** → Removed PrimeVue, optimized rendering
 
 ### Technical Upgrades
+
 - Vue 3 Composition API throughout
 - TypeScript with strict typing
 - Tailwind CSS for styling
@@ -57,13 +63,15 @@ A modern, interactive web application for exploring exoplanets discovered by NAS
 ## 📊 Data Sources
 
 All data comes directly from the **NASA Exoplanet Archive** via their TAP (Table Access Protocol) service:
-- **Source**: https://exoplanetarchive.ipac.caltech.edu/
+
+- **Source**: <https://exoplanetarchive.ipac.caltech.edu/>
 - **Mission**: TESS (Transiting Exoplanet Survey Satellite)
 - **Query**: Real-time SQL queries to the `ps` (Planetary Systems) table
 - **Format**: JSON
 - **Update Frequency**: Live data from NASA's continuously updated archive
 
 ### Data Fields (20+ properties per planet)
+
 - **Identifiers**: Planet name, host star name
 - **Discovery**: Year, facility, detection method
 - **Planetary Properties**: Radius, mass, orbital period, semi-major axis, eccentricity, temperature
@@ -74,6 +82,7 @@ All data comes directly from the **NASA Exoplanet Archive** via their TAP (Table
 ## 🧮 Scientific Calculations
 
 ### Habitable Zone Boundaries
+
 Uses the **Stefan-Boltzmann Law** to calculate where liquid water could exist:
 
 ```typescript
@@ -86,6 +95,7 @@ Outer Boundary = √(L / 0.53) // Maximum greenhouse limit
 ```
 
 ### 3D Coordinate Conversion
+
 Converts astronomical coordinates to Cartesian for visualization:
 
 ```typescript
@@ -99,6 +109,7 @@ z = distance × sin(dec)
 ```
 
 ### Mission Planning
+
 Travel time calculations at fractions of light speed:
 
 ```typescript
@@ -109,7 +120,7 @@ travel_time = distance_light_years / velocity_fraction_of_c
 
 ## 📁 Project Structure
 
-```
+```text
 exoplanet-discovery/
 ├── app.vue                          # Main layout with header/footer
 ├── pages/
@@ -132,6 +143,7 @@ exoplanet-discovery/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ or Node.js 20+
 - npm or yarn
 
@@ -183,6 +195,7 @@ npm run generate
 ## 📖 Documentation
 
 For detailed documentation including:
+
 - Architecture overview
 - Component specifications
 - Data flow diagrams
@@ -238,6 +251,7 @@ See **[DOCUMENTATION.md](./DOCUMENTATION.md)**
 ### Manual Deployment
 
 #### Vercel (Recommended)
+
 ```bash
 # Install Vercel CLI
 npm install -g vercel
@@ -250,6 +264,7 @@ vercel --prod
 ```
 
 #### Netlify
+
 ```bash
 # Build
 npm run build
@@ -258,14 +273,17 @@ npm run build
 ```
 
 #### Docker
+
 ```dockerfile
 # Coming soon - Docker support planned for v2.1
 ```
 
 ### Environment Variables
+
 No environment variables required! The app works out of the box with NASA's public API.
 
 ### Build Output
+
 ```bash
 npm run build
 # Outputs to .output/ directory (Nuxt 3 default)
@@ -277,6 +295,7 @@ npm run build
 ## 📋 Release Checklist
 
 ### Pre-Release (v2.0)
+
 - [x] Remove Pinia dependency → Vue 3 composables
 - [x] Fix SSR initialization errors → Disable SSR
 - [x] Implement modern UI/UX with glassmorphism
@@ -302,6 +321,7 @@ npm run build
 - [ ] Create initial GitHub release (v2.0.0)
 
 ### Post-Release
+
 - [ ] Submit to Show HN / Product Hunt
 - [ ] Share on r/dataisbeautiful
 - [ ] Share on r/space and r/Astronomy
@@ -312,6 +332,7 @@ npm run build
 - [ ] Write blog post about architecture
 
 ### Future Roadmap (v2.1+)
+
 - [ ] Add Three.js option for advanced 3D
 - [ ] Implement data export (CSV, JSON)
 - [ ] Add chart visualizations (Chart.js)
@@ -331,29 +352,38 @@ We welcome contributions! Here's how to get started:
 
 1. **Fork the repository**
 2. **Create a feature branch**
+
    ```bash
    git checkout -b feature/amazing-feature
    ```
+
 3. **Make your changes**
    - Follow the existing code style
    - Add comments for complex logic
    - Update documentation if needed
 4. **Test your changes**
+
    ```bash
    npm run dev
    # Verify all tabs work correctly
    ```
+
 5. **Commit your changes**
+
    ```bash
    git commit -m "feat: add amazing feature"
    ```
+
 6. **Push to your fork**
+
    ```bash
    git push origin feature/amazing-feature
    ```
+
 7. **Open a Pull Request**
 
 ### Development Guidelines
+
 - Use TypeScript for type safety
 - Follow Vue 3 Composition API patterns
 - Keep components under 500 lines
@@ -365,7 +395,7 @@ We welcome contributions! Here's how to get started:
 
 ## 📝 License
 
-**MIT License**
+MIT License
 
 Copyright (c) 2025 Exoplanet Discovery Hub
 
@@ -382,11 +412,13 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## 🙏 Credits & Acknowledgments
 
 ### Data Sources
+
 - **NASA Exoplanet Archive** - Caltech / JPL / NASA
 - **TESS Mission** - MIT / NASA Goddard Space Flight Center
 - **TAP Service** - IPAC / Caltech
 
 ### Technologies
+
 - **Framework**: [Nuxt 3](https://nuxt.com/) / [Vue 3](https://vuejs.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Icons**: [Lucide Icons](https://lucide.dev/)
@@ -394,12 +426,14 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 - **Deployment**: [Vercel](https://vercel.com/) / [Netlify](https://netlify.com/)
 
 ### Inspiration
+
 - NASA mission control interfaces
 - SpaceX Dragon interface
 - James Webb Space Telescope operations UI
 - Aerospace-grade data visualization systems
 
 ### Special Thanks
+
 - The NASA Exoplanet Archive team for maintaining excellent public API documentation
 - The TESS mission team for discovering thousands of exoplanets
 - The Vue.js and Nuxt communities for amazing open-source tools
@@ -427,9 +461,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-**Built with** ❤️ **for space exploration and scientific discovery**
+Built with ❤️ for space exploration and scientific discovery
 
-*"The universe is under no obligation to make sense to you." - Neil deGrasse Tyson*
+> "The universe is under no obligation to make sense to you." - Neil deGrasse Tyson
 
 ---
 

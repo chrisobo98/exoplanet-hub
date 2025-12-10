@@ -19,13 +19,20 @@
       - Average discovery year across all planets
     -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <StatCard label="Total Exoplanets" :value="stats.total" />
-      <StatCard label="In Habitable Zone" :value="stats.habitable" highlight />
-      <StatCard
+      <AtomsStatCard label="Total Exoplanets" :value="stats.total" />
+      <AtomsStatCard
+        label="In Habitable Zone"
+        :value="stats.habitable"
+        highlight
+      />
+      <AtomsStatCard
         label="Nearest System"
         :value="`${stats.nearestDistance.toFixed(1)} ly`"
       />
-      <StatCard label="Avg. Discovery Year" :value="stats.avgDiscoveryYear" />
+      <AtomsStatCard
+        label="Avg. Discovery Year"
+        :value="stats.avgDiscoveryYear"
+      />
     </div>
 
     <!-- ================================================================== -->
@@ -294,9 +301,7 @@ watch(
   (planets) => {
     if (planets.length > 0) {
       // Extract unique stellar types using Set
-      const types = new Set(
-        planets.map((p) => p.st_spectype).filter(Boolean)
-      );
+      const types = new Set(planets.map((p) => p.st_spectype).filter(Boolean));
       // Convert to sorted array for consistent UI ordering
       stellarTypes.value = Array.from(types).sort();
     }

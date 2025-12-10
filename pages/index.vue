@@ -4,44 +4,44 @@
     <nav class="bg-black/20 backdrop-blur-sm border-b border-purple-500/10">
       <div class="max-w-7xl mx-auto px-4">
         <div class="flex gap-1">
-          <TabButton
+          <AtomsTabButton
             :active="activeTab === 'overview'"
             @click="activeTab = 'overview'"
             label="Overview"
           >
             <Map class="w-4 h-4" />
-          </TabButton>
-          <TabButton
+          </AtomsTabButton>
+          <AtomsTabButton
             :active="activeTab === '3d'"
             @click="activeTab = '3d'"
             label="3D Star Map"
           >
             <Globe class="w-4 h-4" />
-          </TabButton>
-          <TabButton
+          </AtomsTabButton>
+          <AtomsTabButton
             :active="activeTab === 'mission'"
             @click="activeTab = 'mission'"
             label="Mission Planner"
           >
             <Rocket class="w-4 h-4" />
-          </TabButton>
-          <TabButton
+          </AtomsTabButton>
+          <AtomsTabButton
             :active="activeTab === 'habitable'"
             @click="activeTab = 'habitable'"
             label="Habitable Zones"
           >
             <Leaf class="w-4 h-4" />
-          </TabButton>
+          </AtomsTabButton>
         </div>
       </div>
     </nav>
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 py-8">
-      <ExoplanetOverview v-if="activeTab === 'overview'" />
-      <StarMap3D v-else-if="activeTab === '3d'" />
-      <MissionCalculator v-else-if="activeTab === 'mission'" />
-      <HabitableZoneAnalysis v-else-if="activeTab === 'habitable'" />
+      <OrganismsExoplanetOverview v-if="activeTab === 'overview'" />
+      <OrganismsStarMap3D v-else-if="activeTab === '3d'" />
+      <OrganismsMissionCalculator v-else-if="activeTab === 'mission'" />
+      <OrganismsHabitableZoneAnalysis v-else-if="activeTab === 'habitable'" />
     </div>
   </div>
 </template>
