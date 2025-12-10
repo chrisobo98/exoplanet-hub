@@ -302,6 +302,13 @@ const lastMouse = ref({ x: 0, y: 0 });
  */
 const autoRotate = ref(true);
 
+/**
+ * Precomputed star opacities for background star field
+ * Computed once and reused for performance
+ * Array of 200 deterministic opacity values (0.2 to 0.7)
+ */
+let starOpacities: number[] | null = null;
+
 // ============================================================================
 // LIFECYCLE & WATCHERS
 // ============================================================================
@@ -445,13 +452,27 @@ function drawScene() {
    * - 1x1 pixel size for distant star appearance
    */
   ctx.fillStyle = "#ffffff";
+
+  /**
+   * Precompute star opacities once for performance
+   * Only computed on first call, then cached
+   * Uses deterministic pseudo-random function for consistent stars
+   */
+  if (!starOpacities) {
+    starOpacities = Array.from({ length: 200 }, (_, i) => {
+      // Simple deterministic pseudo-random function based on index
+      const seed = Math.sin(i * 9999) * 10000;
+      return (seed - Math.floor(seed)) * 0.5 + 0.2;
+    });
+  }
+
   for (let i = 0; i < 200; i++) {
     // Deterministic position using prime number hash
     const x = (i * 137.508) % width;
     const y = (i * 97.342) % height;
 
-    // Random opacity for depth effect (brighter = closer)
-    ctx.globalAlpha = Math.random() * 0.5 + 0.2;
+    // Use precomputed deterministic opacity
+    ctx.globalAlpha = starOpacities[i];
 
     // Draw single pixel star
     ctx.fillRect(x, y, 1, 1);
@@ -596,7 +617,9 @@ function drawScene() {
      * - Objects closer (smaller z) appear larger
      *
      * Clamping:
-     * - Min: 0.1 (prevent division by zero, extremely far objects)
+    // Clamp finalZ to avoid negative or zero denominators
+    const safeZ = Math.max(finalZ, -990); // Ensures denominator >= 10
+    const perspective = Math.max(0.1, Math.min(2, 1000 / (1000 + safeZ)));
      * - Max: 2.0 (prevent oversized objects when very close)
      *
      * Example:
@@ -647,7 +670,7 @@ function drawScene() {
      *
      * Final size:
      * - Scaled by perspective (farther = smaller)
-     * - Minimum 2 pixels (always visible)
+     * - Minimum 3 pixels (always visible, matches base clamp)
      *
      * Example:
      * - Earth-sized (1 R⊕): baseSize = 3px
@@ -701,6 +724,38 @@ function drawScene() {
      * - Glow makes them discoverable
      * - Aesthetically pleasing
      */
+    function hexWithAlpha(baseColor: string, alphaHex: string) {
+      // If already 8-digit hex, just replace alpha
+      if (/^#([A-Fa-f0-9]{8})$/.test(baseColor)) {
+        return baseColor.slice(0, 7) + alphaHex;
+      }
+      // 6-digit hex
+      if (/^#([A-Fa-f0-9]{6})$/.test(baseColor)) {
+        return baseColor + alphaHex;
+      }
+      // 3-digit hex
+      if (/^#([A-Fa-f0-9]{3})$/.test(baseColor)) {
+        const hex = baseColor.replace(
+          /^#([A-Fa-f0-9])([A-Fa-f0-9])([A-Fa-f0-9])$/,
+          (_, r, g, b) => `#${r}${r}${g}${g}${b}${b}`
+        );
+        return hex + alphaHex;
+      }
+      // rgb/rgba string
+      const rgbMatch = baseColor.match(
+        /^rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\s*\)$/
+      );
+      if (rgbMatch) {
+        const r = parseInt(rgbMatch[1]);
+        const g = parseInt(rgbMatch[2]);
+        const b = parseInt(rgbMatch[3]);
+        const a = parseInt(alphaHex, 16) / 255;
+        return `rgba(${r},${g},${b},${a})`;
+      }
+      // fallback: just append alpha
+      return baseColor + alphaHex;
+    }
+
     const gradient = ctx.createRadialGradient(
       screenX,
       screenY,
@@ -709,8 +764,8 @@ function drawScene() {
       screenY,
       size * 2
     );
-    gradient.addColorStop(0, `${color}40`); // 25% opacity at center
-    gradient.addColorStop(1, `${color}00`); // 0% opacity at edge
+    gradient.addColorStop(0, hexWithAlpha(color, "40")); // 25% opacity at center
+    gradient.addColorStop(1, hexWithAlpha(color, "00")); // 0% opacity at edge
 
     ctx.fillStyle = gradient;
     ctx.beginPath();
@@ -750,12 +805,17 @@ function handleMouseDown(e: MouseEvent) {
 }
 
 /**
- * Handle mouse movement on canvas
- *
- * Updates camera rotation when user is dragging.
- *
- * Rotation Calculation:
- * 1. Calculate mouse movement delta (current - last position)
+    // Update rotation angles (0.01 = sensitivity multiplier)
+    rotation.value.x += dy * 0.01; // Up/down drag → pitch
+    rotation.value.y += dx * 0.01; // Left/right drag → yaw
+
+    // Clamp pitch (rotation.x) to [-π/2, π/2] to prevent flipping
+    const maxPitch = Math.PI / 2;
+    const minPitch = -Math.PI / 2;
+    rotation.value.x = Math.max(minPitch, Math.min(maxPitch, rotation.value.x));
+
+    // Update reference position for next frame
+    lastMouse.value = { x: e.clientX, y: e.clientY };
  * 2. Convert pixel delta to rotation angle (0.01 radians per pixel)
  * 3. Update rotation state (triggers redraw via watch)
  * 4. Store current position for next delta calculation

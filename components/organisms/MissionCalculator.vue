@@ -50,14 +50,23 @@
       - Format: "Planet Name (Host Star) - Distance in ly"
       - Updates detail sections when selection changes
     -->
-    <div class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6">
-      <h2 class="text-white text-lg font-semibold mb-4">Select Target Exoplanet</h2>
+    <div
+      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6"
+    >
+      <h2 class="text-white text-lg font-semibold mb-4">
+        Select Target Exoplanet
+      </h2>
       <select
         v-model="selectedPlanetName"
         class="w-full bg-purple-950/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-400"
       >
-        <option v-for="planet in exoplanets" :key="planet.pl_name" :value="planet.pl_name">
-          {{ planet.pl_name }} ({{ planet.hostname }}) - {{ (planet.sy_dist * 3.262).toFixed(1) }} light years
+        <option
+          v-for="planet in exoplanets"
+          :key="planet.pl_name"
+          :value="planet.pl_name"
+        >
+          {{ planet.pl_name }} ({{ planet.hostname }}) -
+          {{ (planet.sy_dist * 3.262).toFixed(1) }} light years
         </option>
       </select>
     </div>
@@ -85,8 +94,13 @@
       - ly: Light year (9.461 trillion km)
       - K: Kelvin (absolute temperature)
     -->
-    <div v-if="selectedPlanet" class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-6">
-      <h3 class="text-white text-lg font-semibold mb-4">Target System Details</h3>
+    <div
+      v-if="selectedPlanet"
+      class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-6"
+    >
+      <h3 class="text-white text-lg font-semibold mb-4">
+        Target System Details
+      </h3>
 
       <!-- Property Grid: Responsive 2/4 column layout -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -102,7 +116,10 @@
           - Computed property for reactivity
           - Displayed to 1 decimal place
         -->
-        <AtomsDetailItem label="Distance" :value="`${distance.toFixed(1)} ly`" />
+        <AtomsDetailItem
+          label="Distance"
+          :value="`${distance.toFixed(1)} ly`"
+        />
 
         <!--
           Stellar Spectral Type
@@ -110,7 +127,10 @@
           - Example: "G2V" = Sun-like star
           - Falls back to "Unknown" if missing
         -->
-        <AtomsDetailItem label="Stellar Type" :value="selectedPlanet.st_spectype || 'Unknown'" />
+        <AtomsDetailItem
+          label="Stellar Type"
+          :value="selectedPlanet.st_spectype || 'Unknown'"
+        />
 
         <!--
           Planet Radius
@@ -120,7 +140,15 @@
           - Mini-Neptunes: 2-4 R⊕
           - N/A if data missing
         -->
-        <AtomsDetailItem label="Radius" :value="`${selectedPlanet.pl_rade?.toFixed(2) || 'N/A'} R⊕`" />
+        <AtomsDetailItem
+          label="Radius"
+          :value="
+            selectedPlanet?.pl_rade !== undefined &&
+            selectedPlanet?.pl_rade !== null
+              ? `${selectedPlanet.pl_rade.toFixed(2)} R⊕`
+              : 'N/A R⊕'
+          "
+        />
 
         <!--
           Planet Mass
@@ -130,7 +158,15 @@
           - Gas giants: 0.3-13 MJ
           - N/A if data missing
         -->
-        <AtomsDetailItem label="Mass" :value="`${selectedPlanet.pl_massj?.toFixed(3) || 'N/A'} MJ`" />
+        <AtomsDetailItem
+          label="Mass"
+          :value="
+            selectedPlanet?.pl_massj !== undefined &&
+            selectedPlanet?.pl_massj !== null
+              ? `${selectedPlanet.pl_massj.toFixed(3)} MJ`
+              : 'N/A MJ'
+          "
+        />
 
         <!--
           Orbital Period
@@ -142,7 +178,15 @@
             * Distant planets: > 1000 days
           - N/A if data missing
         -->
-        <AtomsDetailItem label="Orbital Period" :value="`${selectedPlanet.pl_orbper?.toFixed(1) || 'N/A'} days`" />
+        <AtomsDetailItem
+          label="Orbital Period"
+          :value="
+            selectedPlanet?.pl_orbper !== undefined &&
+            selectedPlanet?.pl_orbper !== null
+              ? `${selectedPlanet.pl_orbper.toFixed(1)} days`
+              : 'N/A days'
+          "
+        />
 
         <!--
           Equilibrium Temperature
@@ -154,7 +198,15 @@
             * Earth average: ~255 K (without greenhouse effect)
           - N/A if data missing
         -->
-        <AtomsDetailItem label="Eq. Temp" :value="`${selectedPlanet.pl_eqt || 'N/A'} K`" />
+        <AtomsDetailItem
+          label="Eq. Temp"
+          :value="
+            selectedPlanet?.pl_eqt !== undefined &&
+            selectedPlanet?.pl_eqt !== null
+              ? `${selectedPlanet.pl_eqt} K`
+              : 'N/A K'
+          "
+        />
       </div>
     </div>
 
@@ -174,7 +226,9 @@
       - 0.1c would require revolutionary technology
       - 0.5c and 0.9c are purely theoretical
     -->
-    <div class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6">
+    <div
+      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6"
+    >
       <!-- Section Header with Clock Icon -->
       <div class="flex items-center gap-2 mb-4">
         <Clock class="w-5 h-5 text-purple-400" />
@@ -190,7 +244,11 @@
           - Most "realistic" of the three options
           - Still requires breakthrough engineering
         -->
-        <AtomsTravelTimeRow description="Fusion drive" speed="0.1" :distance="distance" />
+        <AtomsTravelTimeRow
+          description="Fusion drive"
+          speed="0.1"
+          :distance="distance"
+        />
 
         <!--
           Advanced Propulsion: 0.5c (50% light speed)
@@ -199,7 +257,11 @@
           - Decades/centuries of R&D required
           - Significant relativistic effects
         -->
-        <AtomsTravelTimeRow description="Advanced propulsion" speed="0.5" :distance="distance" />
+        <AtomsTravelTimeRow
+          description="Advanced propulsion"
+          speed="0.5"
+          :distance="distance"
+        />
 
         <!--
           Near-Light Speed: 0.9c (90% light speed)
@@ -208,7 +270,11 @@
           - Currently beyond known science
           - Extreme time dilation effects
         -->
-        <AtomsTravelTimeRow description="Near-light speed" speed="0.9" :distance="distance" />
+        <AtomsTravelTimeRow
+          description="Near-light speed"
+          speed="0.9"
+          :distance="distance"
+        />
       </div>
     </div>
 
@@ -223,10 +289,14 @@
       - Approximated as 50 km/s = 0.00017c for round calculation
       - Shows why breakthrough propulsion is essential
     -->
-    <div class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-6">
+    <div
+      class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-6"
+    >
       <div class="flex items-center gap-2 mb-4">
         <Rocket class="w-5 h-5 text-purple-400" />
-        <h3 class="text-white text-lg font-semibold">Mission Feasibility Assessment</h3>
+        <h3 class="text-white text-lg font-semibold">
+          Mission Feasibility Assessment
+        </h3>
       </div>
       <!-- Educational Context: Reality of Current Technology -->
       <div class="space-y-3 text-purple-200 text-sm">
@@ -245,8 +315,17 @@
           Purpose: Emphasize need for breakthrough propulsion
         -->
         <p>
-          At conventional rocket speeds (~50 km/s or 0.00017c), reaching {{ selectedPlanet?.pl_name || 'this target' }}
-          would take approximately <strong class="text-white">{{ (distance / 0.00017).toFixed(0) }} years</strong>.
+          At conventional rocket speeds (~50 km/s or 0.00017c), reaching
+          {{ selectedPlanet?.pl_name || "this target" }}
+          would take approximately
+          <template v-if="selectedPlanet">
+            <strong class="text-white"
+              >{{ (distance / 0.00017).toFixed(0) }} years</strong
+            >
+          </template>
+          <template v-else>
+            <strong class="text-white">N/A</strong> </template
+          >.
         </p>
 
         <!--
@@ -256,8 +335,9 @@
           - Educational message about scale of challenge
         -->
         <p>
-          Revolutionary propulsion systems like nuclear fusion, antimatter drives, or breakthrough physics
-          would be required for realistic interstellar missions.
+          Revolutionary propulsion systems like nuclear fusion, antimatter
+          drives, or breakthrough physics would be required for realistic
+          interstellar missions.
         </p>
       </div>
     </div>
@@ -289,9 +369,9 @@
  * - Computed properties for derived values
  * - Leverages useExoplanets composable for data
  */
-import { ref, computed, onMounted } from 'vue';
-import { Clock, Rocket } from 'lucide-vue-next';
-import { useExoplanets } from '@/composables/useExoplanets';
+import { ref, computed, onMounted } from "vue";
+import { Clock, Rocket } from "lucide-vue-next";
+import { useExoplanets } from "@/composables/useExoplanets";
 
 // ============================================================================
 // COMPOSABLE & STATE
@@ -313,7 +393,7 @@ const { exoplanets, fetchExoplanets } = useExoplanets();
  * Type: string (planet name identifier)
  * Example: "TOI-700 d"
  */
-const selectedPlanetName = ref<string>('');
+const selectedPlanetName = ref("");
 
 // ============================================================================
 // LIFECYCLE
@@ -347,27 +427,29 @@ onMounted(async () => {
 // ============================================================================
 
 /**
+ * Map of planet names to planet objects for fast lookup
+ *
+ * Improves performance for large datasets by avoiding repeated array scans.
+ *
+ * @type {ComputedRef<Record<string, Exoplanet>>}
+ */
+const planetMap = computed(() => {
+  const map: Record<string, (typeof exoplanets.value)[0]> = {};
+  for (const planet of exoplanets.value) {
+    map[planet.pl_name] = planet;
+  }
+  return map;
+});
+
+/**
  * Selected planet object
  *
- * Finds the full planet object matching the selected name.
- *
- * Returns:
- * - Full Exoplanet object if found
- * - undefined if no match (shouldn't happen with valid dropdown)
- *
- * Reactivity:
- * - Re-evaluates when selectedPlanetName changes
- * - Triggers UI updates in Planet Details section
- *
- * Usage in Template:
- * - v-if="selectedPlanet" - Show/hide details card
- * - selectedPlanet.pl_name - Access planet properties
- * - selectedPlanet.st_spectype - Access stellar properties
+ * Uses planetMap for O(1) lookup by planet name.
  *
  * @type {ComputedRef<Exoplanet | undefined>}
  */
 const selectedPlanet = computed(() => {
-  return exoplanets.value.find(p => p.pl_name === selectedPlanetName.value);
+  return planetMap.value[selectedPlanetName.value];
 });
 
 /**
@@ -394,6 +476,6 @@ const selectedPlanet = computed(() => {
  * @type {ComputedRef<number>}
  */
 const distance = computed(() => {
-  return (selectedPlanet.value?.sy_dist || 0) * 3.262; // parsecs to light years
+  return (selectedPlanet.value?.sy_dist ?? 0) * 3.262; // parsecs to light years
 });
 </script>

@@ -36,7 +36,11 @@
         class="w-full bg-purple-950/50 border border-purple-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-purple-400"
       >
         <!-- Display system name with planet count -->
-        <option v-for="system in systems" :key="system" :value="system">
+        <option
+          v-for="(system, idx) in systems"
+          :key="`${system}-${idx}`"
+          :value="system"
+        >
           {{ system }} ({{ systemsMap[system].length }} planet{{
             systemsMap[system].length > 1 ? "s" : ""
           }})
@@ -101,7 +105,9 @@
              1.0 L☉ = Sun's luminosity -->
         <DetailItem
           label="Luminosity"
-          :value="`${habitableZone.luminosity.toFixed(3)} L☉`"
+          :value="
+            habitableZone ? `${habitableZone.luminosity.toFixed(3)} L☉` : 'N/A'
+          "
         />
       </div>
     </div>
@@ -129,53 +135,63 @@
       <h3 class="text-white text-lg font-semibold mb-4">
         Habitable Zone Boundaries
       </h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Inner Boundary: Runaway greenhouse limit -->
-        <div
-          class="text-center p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
-        >
-          <div class="text-red-300 text-sm mb-1">Inner Boundary (Too Hot)</div>
-          <div class="text-white text-2xl font-bold">
-            {{ habitableZone.innerBoundary.toFixed(3) }} AU
+      <template v-if="habitableZone">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Inner Boundary: Runaway greenhouse limit -->
+          <div
+            class="text-center p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+          >
+            <div class="text-red-300 text-sm mb-1">
+              Inner Boundary (Too Hot)
+            </div>
+            <div class="text-white text-2xl font-bold">
+              {{ habitableZone.innerBoundary.toFixed(3) }} AU
+            </div>
+            <!-- Convert AU to million km: AU × 149.6 -->
+            <div class="text-red-200 text-xs mt-2">
+              {{ (habitableZone.innerBoundary * 149.6).toFixed(1) }} million km
+            </div>
           </div>
-          <!-- Convert AU to million km: AU × 149.6 -->
-          <div class="text-red-200 text-xs mt-2">
-            {{ (habitableZone.innerBoundary * 149.6).toFixed(1) }} million km
-          </div>
-        </div>
 
-        <!-- Habitable Zone Width: Range where liquid water is possible -->
-        <div
-          class="text-center p-4 bg-green-500/10 border border-green-500/30 rounded-lg"
-        >
-          <div class="text-green-300 text-sm mb-1">Habitable Zone Width</div>
-          <div class="text-white text-2xl font-bold">
-            {{
-              (
-                habitableZone.outerBoundary - habitableZone.innerBoundary
-              ).toFixed(3)
-            }}
-            AU
+          <!-- Habitable Zone Width: Range where liquid water is possible -->
+          <div
+            class="text-center p-4 bg-green-500/10 border border-green-500/30 rounded-lg"
+          >
+            <div class="text-green-300 text-sm mb-1">Habitable Zone Width</div>
+            <div class="text-white text-2xl font-bold">
+              {{
+                (
+                  habitableZone.outerBoundary - habitableZone.innerBoundary
+                ).toFixed(3)
+              }}
+              AU
+            </div>
+            <div class="text-green-200 text-xs mt-2">Liquid water possible</div>
           </div>
-          <div class="text-green-200 text-xs mt-2">Liquid water possible</div>
-        </div>
 
-        <!-- Outer Boundary: Maximum greenhouse limit -->
-        <div
-          class="text-center p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg"
-        >
-          <div class="text-blue-300 text-sm mb-1">
-            Outer Boundary (Too Cold)
-          </div>
-          <div class="text-white text-2xl font-bold">
-            {{ habitableZone.outerBoundary.toFixed(3) }} AU
-          </div>
-          <!-- Convert AU to million km: AU × 149.6 -->
-          <div class="text-blue-200 text-xs mt-2">
-            {{ (habitableZone.outerBoundary * 149.6).toFixed(1) }} million km
+          <!-- Outer Boundary: Maximum greenhouse limit -->
+          <div
+            class="text-center p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg"
+          >
+            <div class="text-blue-300 text-sm mb-1">
+              Outer Boundary (Too Cold)
+            </div>
+            <div class="text-white text-2xl font-bold">
+              {{ habitableZone.outerBoundary.toFixed(3) }} AU
+            </div>
+            <!-- Convert AU to million km: AU × 149.6 -->
+            <div class="text-blue-200 text-xs mt-2">
+              {{ (habitableZone.outerBoundary * 149.6).toFixed(1) }} million km
+            </div>
           </div>
         </div>
-      </div>
+      </template>
+      <template v-else>
+        <div class="text-red-300 text-center py-6">
+          Unable to calculate habitable zone boundaries: missing stellar data
+          for this system.
+        </div>
+      </template>
 
       <!-- Educational description of habitable zones -->
       <div class="mt-4 text-purple-200 text-sm">
@@ -246,7 +262,12 @@
             <div>
               <div class="text-purple-300">Radius</div>
               <div class="text-white">
-                {{ planet.pl_rade?.toFixed(2) || "N/A" }} R⊕
+                {{
+                  typeof planet.pl_rade === "number"
+                    ? planet.pl_rade.toFixed(2)
+                    : "N/A"
+                }}
+                R⊕
               </div>
             </div>
 
@@ -256,11 +277,7 @@
             <div>
               <div class="text-purple-300">Eq. Temp</div>
               <div class="text-white">
-                {{
-                  planet.pl_eqt !== null && planet.pl_eqt !== undefined
-                    ? planet.pl_eqt
-                    : "N/A"
-                }}
+                {{ planet.pl_eqt != null ? planet.pl_eqt : "N/A" }}
                 K
               </div>
             </div>
@@ -450,18 +467,16 @@ const referencePlanet = computed(
  * Calculates inner/outer boundaries and stellar luminosity using
  * Stefan-Boltzmann Law from the reference planet's stellar properties.
  *
- * Returns zeros if no reference planet (shouldn't happen in practice).
- *
- * Result object:
- * - innerBoundary: Inner edge in AU (runaway greenhouse limit)
- * - outerBoundary: Outer edge in AU (maximum greenhouse limit)
- * - luminosity: Stellar luminosity in Solar luminosities
- *
- * @type {ComputedRef<HabitableZoneBoundaries>}
+ * Returns null if no reference planet is found.
  */
-const habitableZone = computed(() => {
+type HabitableZoneBoundaries = {
+  innerBoundary: number;
+  outerBoundary: number;
+  luminosity: number;
+};
+const habitableZone = computed<HabitableZoneBoundaries | null>(() => {
   if (!referencePlanet.value) {
-    return { innerBoundary: 0, outerBoundary: 0, luminosity: 0 };
+    return null;
   }
   return calculateHabitableZone(
     referencePlanet.value.st_rad,
@@ -482,9 +497,14 @@ const habitableZone = computed(() => {
  * @type {ComputedRef<Exoplanet[]>}
  */
 const sortedPlanets = computed(() => {
-  return [...currentSystemPlanets.value].sort(
-    (a, b) => (a.pl_orbsmax || 0) - (b.pl_orbsmax || 0)
-  );
+  return [...currentSystemPlanets.value].sort((a, b) => {
+    const aVal = a.pl_orbsmax;
+    const bVal = b.pl_orbsmax;
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
+    return aVal - bVal;
+  });
 });
 
 // ============================================================================
@@ -507,6 +527,7 @@ const sortedPlanets = computed(() => {
  */
 function getPlanetCardClass(planet: Exoplanet): string {
   // Determine habitability zone using pre-calculated boundaries
+  if (!habitableZone.value) return "unknown";
   const zone = isInHabitableZone(
     planet,
     habitableZone.value.innerBoundary,
@@ -541,6 +562,11 @@ function getPlanetCardClass(planet: Exoplanet): string {
  * @returns {string} Human-readable label with emoji
  */
 function getHabitableZoneLabel(planet: Exoplanet): string {
+  // Return default if no habitable zone calculated (missing stellar data)
+  if (!habitableZone.value) {
+    return "❄ Too Cold for Liquid Water";
+  }
+
   // Determine zone using pre-calculated boundaries
   const zone = isInHabitableZone(
     planet,

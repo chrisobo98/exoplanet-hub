@@ -27,7 +27,11 @@
       />
       <AtomsStatCard
         label="Nearest System"
-        :value="`${stats.nearestDistance.toFixed(1)} ly`"
+        :value="
+          stats.nearestDistance !== null && stats.nearestDistance !== undefined
+            ? `${stats.nearestDistance.toFixed(1)} ly`
+            : 'N/A'
+        "
       />
       <AtomsStatCard
         label="Avg. Discovery Year"
