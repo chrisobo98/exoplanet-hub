@@ -61,7 +61,21 @@
   <OrganismsStarMap3D />
 -->
 <template>
-  <div class="space-y-6">
+  <!-- Loading State -->
+  <div
+    v-if="loading"
+    class="flex items-center justify-center min-h-[600px]"
+  >
+    <div class="text-center">
+      <div
+        class="inline-block w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+      ></div>
+      <p class="text-purple-300 text-lg">Loading 3D star map...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div v-else class="space-y-6">
     <!-- Instructions: User guide explaining the visualization -->
     <div
       class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-6"
@@ -250,10 +264,11 @@ import { useExoplanets } from "@/composables/useExoplanets";
 /**
  * Exoplanet data and utilities from global composable
  * - exoplanets: Array of exoplanet objects with 3D coordinates
+ * - loading: Loading state indicator
  * - fetchExoplanets: Function to load data from NASA API
  * - isInHabitableZone: Function to classify planet habitability
  */
-const { exoplanets, fetchExoplanets, isInHabitableZone } = useExoplanets();
+const { exoplanets, loading, fetchExoplanets, isInHabitableZone } = useExoplanets();
 
 /**
  * Canvas reference for rendering
@@ -327,8 +342,10 @@ let starOpacities: number[] | null = null;
  * Runs indefinitely (checked every frame)
  */
 onMounted(async () => {
-  // Load exoplanet data (singleton composable may cache)
-  await fetchExoplanets();
+  // Only fetch if data not already loaded (prevents reload on tab switch)
+  if (exoplanets.value.length === 0) {
+    await fetchExoplanets();
+  }
 
   // Initial render
   drawScene();

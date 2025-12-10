@@ -18,7 +18,21 @@
     - Classifies planets as: habitable, too-hot, or too-cold
     - Displays orbital mechanics (period, eccentricity)
   -->
-  <div class="space-y-6">
+  <!-- Loading State -->
+  <div
+    v-if="loading"
+    class="flex items-center justify-center min-h-[400px]"
+  >
+    <div class="text-center">
+      <div
+        class="inline-block w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+      ></div>
+      <p class="text-purple-300 text-lg">Loading exoplanet data...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div v-else class="space-y-6">
     <!-- ================================================================== -->
     <!-- SYSTEM SELECTION                                                   -->
     <!-- ================================================================== -->
@@ -402,6 +416,7 @@ import type { Exoplanet } from "@/types/exoplanet";
  */
 const {
   exoplanets,
+  loading,
   fetchExoplanets,
   calculateHabitableZone,
   isInHabitableZone,
@@ -421,7 +436,10 @@ const selectedSystem = ref<string>("");
  * Fetch exoplanet data and auto-select first system on component mount
  */
 onMounted(async () => {
-  await fetchExoplanets();
+  // Only fetch if data not already loaded (prevents reload on tab switch)
+  if (exoplanets.value.length === 0) {
+    await fetchExoplanets();
+  }
 
   // Auto-select first system if available
   if (systems.value.length > 0) {

@@ -43,7 +43,21 @@
   <OrganismsMissionCalculator />
 -->
 <template>
-  <div class="space-y-6">
+  <!-- Loading State -->
+  <div
+    v-if="loading"
+    class="flex items-center justify-center min-h-[400px]"
+  >
+    <div class="text-center">
+      <div
+        class="inline-block w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+      ></div>
+      <p class="text-purple-300 text-lg">Loading exoplanet data...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div v-else class="space-y-6">
     <!--
       Planet Selection Dropdown
       - Shows all TESS-discovered exoplanets
@@ -380,9 +394,10 @@ import { useExoplanets } from "@/composables/useExoplanets";
 /**
  * Exoplanet data from global composable
  * - exoplanets: Array of all TESS-discovered exoplanets
+ * - loading: Loading state indicator
  * - fetchExoplanets: Function to load data from API
  */
-const { exoplanets, fetchExoplanets } = useExoplanets();
+const { exoplanets, loading, fetchExoplanets } = useExoplanets();
 
 /**
  * Selected planet name (user's dropdown choice)
@@ -413,8 +428,10 @@ const selectedPlanetName = ref("");
  * - Better UX than forcing user to make initial selection
  */
 onMounted(async () => {
-  // Load data (composable may cache, so fast on subsequent calls)
-  await fetchExoplanets();
+  // Only fetch if data not already loaded (prevents reload on tab switch)
+  if (exoplanets.value.length === 0) {
+    await fetchExoplanets();
+  }
 
   // Auto-select first planet if data available
   if (exoplanets.value.length > 0) {

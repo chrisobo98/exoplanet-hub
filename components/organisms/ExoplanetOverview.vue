@@ -7,7 +7,21 @@
     2. Filter Controls - Interactive filters for data exploration
     3. Data Table - Detailed exoplanet information with sortable columns
   -->
-  <div class="space-y-6">
+  <!-- Loading State -->
+  <div
+    v-if="loading"
+    class="flex items-center justify-center min-h-[400px]"
+  >
+    <div class="text-center">
+      <div
+        class="inline-block w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"
+      ></div>
+      <p class="text-purple-300 text-lg">Loading exoplanet data...</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div v-else class="space-y-6">
     <!-- ================================================================== -->
     <!-- SUMMARY STATISTICS CARDS                                           -->
     <!-- ================================================================== -->
@@ -339,7 +353,7 @@ import type { Exoplanet } from "@/types/exoplanet";
  * This composable manages the global state of exoplanet data and provides
  * helper functions for habitable zone calculations.
  */
-const { exoplanets, stats, fetchExoplanets, isInHabitableZone } =
+const { exoplanets, loading, stats, fetchExoplanets, isInHabitableZone } =
   useExoplanets();
 
 // ============================================================================
