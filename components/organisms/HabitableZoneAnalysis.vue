@@ -72,14 +72,14 @@
       </h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Stellar spectral type (e.g., M3V, G2V, K5) -->
-        <DetailItem
+        <AtomsDetailItem
           label="Stellar Type"
           :value="referencePlanet.st_spectype || 'Unknown'"
         />
 
         <!-- Stellar effective temperature in Kelvin
              Null-safe: Checks for undefined and null before rendering -->
-        <DetailItem
+        <AtomsDetailItem
           label="Temperature"
           :value="
             referencePlanet.st_teff !== undefined &&
@@ -91,7 +91,7 @@
 
         <!-- Stellar radius in Solar radii (R☉)
              Null-safe: Shows "N/A" if data missing -->
-        <DetailItem
+        <AtomsDetailItem
           label="Radius"
           :value="`${
             typeof referencePlanet.st_rad === 'number'
@@ -103,7 +103,7 @@
         <!-- Stellar luminosity (calculated from Stefan-Boltzmann Law)
              Derived from radius and temperature
              1.0 L☉ = Sun's luminosity -->
-        <DetailItem
+        <AtomsDetailItem
           label="Luminosity"
           :value="
             habitableZone ? `${habitableZone.luminosity.toFixed(3)} L☉` : 'N/A'
@@ -113,7 +113,7 @@
         <!-- Stellar age in Gyr (billions of years)
              Sun's age: ~4.6 Gyr
              Null-safe: Shows "N/A" if data missing -->
-        <DetailItem
+        <AtomsDetailItem
           label="Age"
           :value="`${
             typeof referencePlanet.st_age === 'number'
@@ -128,7 +128,7 @@
              [Fe/H] > 0: Metal-rich (more heavy elements than Sun)
              [Fe/H] < 0: Metal-poor (fewer heavy elements than Sun)
              Null-safe: Shows "N/A" if data missing -->
-        <DetailItem
+        <AtomsDetailItem
           label="Metallicity"
           :value="`${
             typeof referencePlanet.st_met === 'number'
@@ -142,7 +142,7 @@
              Sun: log(g) ≈ 4.44
              Higher values = denser/more compact stars
              Null-safe: Shows "N/A" if data missing -->
-        <DetailItem
+        <AtomsDetailItem
           label="Surface Gravity"
           :value="`${
             typeof referencePlanet.st_logg === 'number'
