@@ -124,7 +124,7 @@ export const useExoplanets = () => {
         params: {
           query: `select pl_name, hostname, disc_year, disc_facility, discoverymethod,
                   pl_rade, pl_radj, pl_masse, pl_massj, pl_orbper, pl_orbsmax, pl_orbeccen, pl_eqt,
-                  st_teff, st_rad, st_mass, st_spectype, ra, dec, sy_dist
+                  st_teff, st_rad, st_mass, st_spectype, st_age, st_met, st_logg, ra, dec, sy_dist
                   from ps
                   where disc_facility like '%TESS%' and default_flag = 1`,
         },

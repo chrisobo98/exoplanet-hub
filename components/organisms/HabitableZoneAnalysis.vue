@@ -109,6 +109,47 @@
             habitableZone ? `${habitableZone.luminosity.toFixed(3)} L☉` : 'N/A'
           "
         />
+
+        <!-- Stellar age in Gyr (billions of years)
+             Sun's age: ~4.6 Gyr
+             Null-safe: Shows "N/A" if data missing -->
+        <DetailItem
+          label="Age"
+          :value="`${
+            typeof referencePlanet.st_age === 'number'
+              ? referencePlanet.st_age.toFixed(3)
+              : 'N/A'
+          } Gyr`"
+        />
+
+        <!-- Stellar metallicity [Fe/H]
+             Measures abundance of elements heavier than hydrogen/helium
+             [Fe/H] = 0: Solar metallicity
+             [Fe/H] > 0: Metal-rich (more heavy elements than Sun)
+             [Fe/H] < 0: Metal-poor (fewer heavy elements than Sun)
+             Null-safe: Shows "N/A" if data missing -->
+        <DetailItem
+          label="Metallicity"
+          :value="`${
+            typeof referencePlanet.st_met === 'number'
+              ? referencePlanet.st_met.toFixed(2)
+              : 'N/A'
+          } [Fe/H]`"
+        />
+
+        <!-- Stellar surface gravity log10(cm/s²)
+             Measure of gravitational acceleration at star's surface
+             Sun: log(g) ≈ 4.44
+             Higher values = denser/more compact stars
+             Null-safe: Shows "N/A" if data missing -->
+        <DetailItem
+          label="Surface Gravity"
+          :value="`${
+            typeof referencePlanet.st_logg === 'number'
+              ? referencePlanet.st_logg.toFixed(2)
+              : 'N/A'
+          } log(g)`"
+        />
       </div>
     </div>
 

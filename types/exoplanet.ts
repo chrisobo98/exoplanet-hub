@@ -23,6 +23,9 @@ export interface Exoplanet {
   st_rad: number; // Stellar radius (Solar radii)
   st_mass: number; // Stellar mass (Solar masses)
   st_spectype: string; // Stellar spectral type
+  st_age: number; // Stellar age (Gyr - billions of years)
+  st_met: number; // Stellar metallicity [Fe/H]
+  st_logg: number; // Stellar surface gravity log10(cm/s²)
 
   // Positional data
   ra: number; // Right ascension
