@@ -57,7 +57,7 @@
         <Filter class="w-5 h-5 text-purple-400" />
         <h2 class="text-white text-lg font-semibold">Filters</h2>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <!-- Stellar Type Filter -->
         <div>
           <label class="block text-purple-200 text-sm mb-2">Stellar Type</label>
@@ -66,10 +66,25 @@
             class="w-full bg-purple-950/50 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400"
           >
             <option value="all">All Types</option>
-            <!-- TODO: Populate stellarTypes array from fetched data -->
             <option v-for="type in stellarTypes" :key="type" :value="type">
               Type {{ type }}
             </option>
+          </select>
+        </div>
+
+        <!-- Habitable Zone Filter -->
+        <div>
+          <label class="block text-purple-200 text-sm mb-2"
+            >Habitable Zone</label
+          >
+          <select
+            v-model="selectedHabitableZone"
+            class="w-full bg-purple-950/50 border border-purple-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-400"
+          >
+            <option value="all">All Zones</option>
+            <option value="habitable">Habitable</option>
+            <option value="too-hot">Too Hot</option>
+            <option value="too-cold">Too Cold</option>
           </select>
         </div>
 
@@ -78,7 +93,6 @@
           <label class="block text-purple-200 text-sm mb-2"
             >Min Distance (ly)</label
           >
-          <!-- v-model.number ensures numeric input type -->
           <input
             v-model.number="minDistance"
             type="number"
@@ -121,29 +135,92 @@
       - Responsive with horizontal scroll on small screens
     -->
     <div
-      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6 overflow-x-auto"
+      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6"
     >
-      <h3 class="text-white text-lg font-semibold mb-4">
-        Discovered Exoplanets
-      </h3>
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-purple-500/20">
-            <th class="text-left py-3 px-4 text-purple-200">Name</th>
-            <th class="text-left py-3 px-4 text-purple-200">Host Star</th>
-            <th class="text-left py-3 px-4 text-purple-200">Type</th>
-            <th class="text-left py-3 px-4 text-purple-200">Distance (ly)</th>
-            <th class="text-left py-3 px-4 text-purple-200">Radius (R⊕)</th>
-            <th class="text-left py-3 px-4 text-purple-200">Habitable Zone</th>
-            <th class="text-left py-3 px-4 text-purple-200">Year</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="planet in filteredExoplanets"
-            :key="planet.pl_name"
-            class="border-b border-purple-500/10 hover:bg-purple-500/10 transition-colors"
-          >
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-white text-lg font-semibold">
+          Discovered Exoplanets
+        </h3>
+        <div class="text-purple-300 text-sm">
+          Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ filteredExoplanets.length }} planets
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-purple-500/20">
+              <th
+                @click="sortBy('pl_name')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Name
+                <span v-if="sortColumn === 'pl_name'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th
+                @click="sortBy('hostname')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Host Star
+                <span v-if="sortColumn === 'hostname'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th
+                @click="sortBy('st_spectype')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Type
+                <span v-if="sortColumn === 'st_spectype'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th
+                @click="sortBy('sy_dist')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Distance (ly)
+                <span v-if="sortColumn === 'sy_dist'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th
+                @click="sortBy('pl_rade')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Radius (R⊕)
+                <span v-if="sortColumn === 'pl_rade'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th
+                @click="sortBy('habitable_zone')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Habitable Zone
+                <span v-if="sortColumn === 'habitable_zone'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+              <th
+                @click="sortBy('disc_year')"
+                class="text-left py-3 px-4 text-purple-200 cursor-pointer hover:text-purple-100 select-none"
+              >
+                Year
+                <span v-if="sortColumn === 'disc_year'" class="ml-1">
+                  {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="planet in paginatedExoplanets"
+              :key="planet.pl_name"
+              class="border-b border-purple-500/10 hover:bg-purple-500/10 transition-colors"
+            >
             <!-- Planet Name -->
             <td class="py-3 px-4 text-white">{{ planet.pl_name }}</td>
 
@@ -200,6 +277,36 @@
       >
         No exoplanets match your filters
       </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div
+        v-if="filteredExoplanets.length > 0"
+        class="flex justify-between items-center mt-4 gap-4"
+      >
+        <!-- Previous Button -->
+        <button
+          @click="previousPage"
+          :disabled="currentPage === 1"
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+        >
+          Previous
+        </button>
+
+        <!-- Page Info -->
+        <div class="text-purple-300 text-sm">
+          Page {{ currentPage }} of {{ totalPages }}
+        </div>
+
+        <!-- Next Button -->
+        <button
+          @click="nextPage"
+          :disabled="currentPage === totalPages"
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 disabled:bg-purple-900 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+        >
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -250,6 +357,12 @@ const { exoplanets, stats, fetchExoplanets, isInHabitableZone } =
 const selectedStellarType = ref<string>("all");
 
 /**
+ * Selected habitable zone filter
+ * Options: 'all', 'habitable', 'too-hot', 'too-cold'
+ */
+const selectedHabitableZone = ref<string>("all");
+
+/**
  * Minimum distance filter in light years
  * Default: 0 (show all planets regardless of how close)
  */
@@ -261,6 +374,35 @@ const minDistance = ref<number>(0);
  * Note: Most TESS discoveries are within ~300 light years
  */
 const maxDistance = ref<number>(5000);
+
+// ============================================================================
+// SORTING STATE
+// ============================================================================
+
+/**
+ * Current sort column
+ * Can be: pl_name, hostname, st_spectype, sy_dist, pl_rade, habitable_zone, disc_year
+ */
+const sortColumn = ref<string>("pl_name");
+
+/**
+ * Sort direction: ascending or descending
+ */
+const sortDirection = ref<"asc" | "desc">("asc");
+
+// ============================================================================
+// PAGINATION STATE
+// ============================================================================
+
+/**
+ * Current page number (1-indexed)
+ */
+const currentPage = ref<number>(1);
+
+/**
+ * Number of items per page
+ */
+const itemsPerPage = ref<number>(25);
 
 // ============================================================================
 // LIFECYCLE HOOKS
@@ -318,42 +460,173 @@ watch(
 // ============================================================================
 
 /**
- * Filter exoplanets based on user-selected criteria
+ * Filter and sort exoplanets based on user-selected criteria
  *
  * Filters applied:
  * 1. Stellar Type: Match exact spectral type or show all
- * 2. Distance Range: Planet must be within min/max light year range
+ * 2. Habitable Zone: Match zone classification or show all
+ * 3. Distance Range: Planet must be within min/max light year range
  *
- * Distance Conversion:
- * - NASA provides distance in parsecs (sy_dist)
- * - We convert to light years: 1 parsec = 3.262 light years
- * - Uses nullish coalescing (??) to handle missing data (defaults to 0)
+ * Then sorts by selected column and direction
  *
- * Performance: Runs on every reactive change to filters or exoplanets array
+ * Performance: Runs on every reactive change to filters, sort, or exoplanets array
  */
 const filteredExoplanets = computed(() => {
-  return exoplanets.value.filter((planet) => {
+  // First, filter the planets
+  let filtered = exoplanets.value.filter((planet) => {
     // Convert parsecs to light years (1 parsec = 3.262 light years)
-    // Use nullish coalescing to handle null/undefined values
     const distanceLY = (planet.sy_dist ?? 0) * 3.262;
 
-    // Check if planet matches selected stellar type (or 'all' is selected)
+    // Check stellar type filter
     const typeMatch =
       selectedStellarType.value === "all" ||
       planet.st_spectype === selectedStellarType.value;
 
-    // Check if planet distance is within selected range
+    // Check habitable zone filter
+    const zoneMatch =
+      selectedHabitableZone.value === "all" ||
+      isInHabitableZone(planet) === selectedHabitableZone.value;
+
+    // Check distance range filter
     const distanceMatch =
       distanceLY >= minDistance.value && distanceLY <= maxDistance.value;
 
-    // Planet must match BOTH filters to be included
-    return typeMatch && distanceMatch;
+    // Planet must match ALL filters to be included
+    return typeMatch && zoneMatch && distanceMatch;
   });
+
+  // Then, sort the filtered results
+  return filtered.sort((a, b) => {
+    let aVal: any;
+    let bVal: any;
+
+    // Get values based on sort column
+    switch (sortColumn.value) {
+      case "pl_name":
+        aVal = a.pl_name || "";
+        bVal = b.pl_name || "";
+        break;
+      case "hostname":
+        aVal = a.hostname || "";
+        bVal = b.hostname || "";
+        break;
+      case "st_spectype":
+        aVal = a.st_spectype || "";
+        bVal = b.st_spectype || "";
+        break;
+      case "sy_dist":
+        aVal = a.sy_dist ?? 999999;
+        bVal = b.sy_dist ?? 999999;
+        break;
+      case "pl_rade":
+        aVal = a.pl_rade ?? 999999;
+        bVal = b.pl_rade ?? 999999;
+        break;
+      case "habitable_zone":
+        aVal = isInHabitableZone(a);
+        bVal = isInHabitableZone(b);
+        break;
+      case "disc_year":
+        aVal = a.disc_year ?? 999999;
+        bVal = b.disc_year ?? 999999;
+        break;
+      default:
+        return 0;
+    }
+
+    // Compare values
+    let comparison = 0;
+    if (aVal < bVal) comparison = -1;
+    if (aVal > bVal) comparison = 1;
+
+    // Apply sort direction
+    return sortDirection.value === "asc" ? comparison : -comparison;
+  });
+});
+
+// ============================================================================
+// PAGINATION COMPUTED PROPERTIES
+// ============================================================================
+
+/**
+ * Total number of pages based on filtered results
+ */
+const totalPages = computed(() => {
+  return Math.ceil(filteredExoplanets.value.length / itemsPerPage.value);
+});
+
+/**
+ * Start index for current page (0-indexed)
+ */
+const startIndex = computed(() => {
+  return (currentPage.value - 1) * itemsPerPage.value;
+});
+
+/**
+ * End index for current page (exclusive)
+ */
+const endIndex = computed(() => {
+  return Math.min(
+    startIndex.value + itemsPerPage.value,
+    filteredExoplanets.value.length
+  );
+});
+
+/**
+ * Paginated exoplanets for current page
+ */
+const paginatedExoplanets = computed(() => {
+  return filteredExoplanets.value.slice(startIndex.value, endIndex.value);
+});
+
+// ============================================================================
+// WATCHERS
+// ============================================================================
+
+/**
+ * Reset to page 1 when filters change
+ * Prevents showing empty page if user is on page 10 and filters down to 5 results
+ */
+watch([selectedStellarType, selectedHabitableZone, minDistance, maxDistance], () => {
+  currentPage.value = 1;
 });
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
+
+/**
+ * Sort by column
+ * Toggles direction if clicking same column, otherwise sets to ascending
+ */
+function sortBy(column: string) {
+  if (sortColumn.value === column) {
+    // Toggle direction if same column
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    // New column, default to ascending
+    sortColumn.value = column;
+    sortDirection.value = "asc";
+  }
+}
+
+/**
+ * Go to previous page
+ */
+function previousPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+}
+
+/**
+ * Go to next page
+ */
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+}
 
 /**
  * Get Tailwind CSS classes for habitable zone badge
