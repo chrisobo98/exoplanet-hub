@@ -266,8 +266,8 @@ exoplanet-discovery/
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/exoplanet-discovery.git
-cd exoplanet-discovery
+git clone https://github.com/chrisobo98/exoplanet-hub.git
+cd exoplanet-hub
 
 # Install dependencies
 npm install
@@ -366,65 +366,16 @@ For detailed scientific formulas, references, and contribution guidelines:
 - 📊 **Data Scientists**: Advanced interactive data visualization techniques
 - 🏫 **Planetariums & Museums**: Public display-ready interface with auto-rotation mode
 
-## 🚢 Deployment
-
-### Quick Deploy
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/exoplanet-discovery)
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/exoplanet-discovery)
-
-### Manual Deployment
-
-#### Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy
-vercel
-
-# Deploy to production
-vercel --prod
-```
-
-#### Netlify
-
-```bash
-# Build
-npm run build
-
-# Deploy dist/ folder to Netlify
-```
-
-#### Docker
-
-```dockerfile
-# Coming soon - Docker support planned for v2.1
-```
-
-### Environment Variables
-
-No environment variables required! The app works out of the box with NASA's public API.
-
-### Build Output
-
-```bash
-npm run build
-# Outputs to .output/ directory (Nuxt 3 default)
-# Ready for serverless deployment
-```
-
 ---
 
 ## 📋 Release Checklist
 
-### Pre-Release (v2.0)
+### Completed (v2.0)
 
 - [x] Remove Pinia dependency → Vue 3 composables
 - [x] Fix SSR initialization errors → Disable SSR
 - [x] Implement modern UI/UX with glassmorphism
-- [x] Build custom 3D star map visualization
+- [x] Build custom 3D star map visualization with Three.js
 - [x] Add mission planning calculator
 - [x] Add habitable zone analysis
 - [x] Enhance data model (20+ fields)
@@ -435,12 +386,14 @@ npm run build
   - [x] API.md - Complete API reference
   - [x] COMPONENTS.md - Component architecture
   - [x] DOCUMENTATION.md - Technical overview
-- [x] Heavy code commenting (ExoplanetOverview)
-- [ ] Heavy code commenting (remaining components)
+- [x] Heavy code commenting throughout components
+- [x] Set up GitHub repository
+- [x] Live demo deployed on Netlify
+
+### Future Enhancements
+
 - [ ] Add screenshots/demo GIF to README
 - [ ] Create demo video
-- [ ] Set up GitHub repository
-- [ ] Configure GitHub Pages for live demo
 - [ ] Add CONTRIBUTING.md
 - [ ] Add CODE_OF_CONDUCT.md
 - [ ] Create initial GitHub release (v2.0.0)
@@ -458,7 +411,6 @@ npm run build
 
 ### Future Roadmap (v2.1+)
 
-- [ ] Add Three.js option for advanced 3D
 - [ ] Implement data export (CSV, JSON)
 - [ ] Add chart visualizations (Chart.js)
 - [ ] Create comparison tool
@@ -511,7 +463,6 @@ We welcome contributions! Here's how to get started:
 
 - Use TypeScript for type safety
 - Follow Vue 3 Composition API patterns
-- Keep components under 500 lines
 - Add JSDoc comments for functions
 - Use semantic commit messages
 - Test on mobile devices
@@ -568,9 +519,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## 🔗 Links
 
-- **Live Demo**: [Coming Soon]
+- **Live Demo**: [exoplanethub.netlify.app](https://exoplanethub.netlify.app/)
 - **Documentation**: [docs/](./docs/)
-- **GitHub Issues**: [Report a Bug](https://github.com/yourusername/exoplanet-discovery/issues)
+- **GitHub Issues**: [Report a Bug](https://github.com/chrisobo98/exoplanet-hub/issues)
 - **NASA Archive**: [exoplanetarchive.ipac.caltech.edu](https://exoplanetarchive.ipac.caltech.edu/)
 - **TESS Mission**: [tess.mit.edu](https://tess.mit.edu/)
 
@@ -578,11 +529,11 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ## 📊 Project Stats
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/exoplanet-discovery?style=social)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/exoplanet-discovery?style=social)
-![GitHub issues](https://img.shields.io/github/issues/yourusername/exoplanet-discovery)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/yourusername/exoplanet-discovery)
-![License](https://img.shields.io/github/license/yourusername/exoplanet-discovery)
+![GitHub stars](https://img.shields.io/github/stars/chrisobo98/exoplanet-hub?style=social)
+![GitHub forks](https://img.shields.io/github/forks/chrisobo98/exoplanet-hub?style=social)
+![GitHub issues](https://img.shields.io/github/issues/chrisobo98/exoplanet-hub)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/chrisobo98/exoplanet-hub)
+![License](https://img.shields.io/github/license/chrisobo98/exoplanet-hub)
 
 ---
 
