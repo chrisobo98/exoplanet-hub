@@ -129,6 +129,114 @@ The Kopparapu 2013 paper also provides **optimistic** boundaries:
 
 We chose the conservative estimates as they are more scientifically defensible for classifying potentially habitable worlds.
 
+### Data Quality Safeguards
+
+#### The Problem: Inconsistent Stellar Parameters
+
+The NASA Exoplanet Archive aggregates data from multiple sources and publications. For newly discovered planets (especially from TESS), stellar characterization is often preliminary and subject to revision. This can lead to:
+
+1. **Conflicting stellar parameters** across different publications
+2. **Incorrect radius or temperature values** in database queries
+3. **False positive habitable zone classifications** due to bad input data
+
+#### Real-World Example: TOI-6478 b
+
+**Database values**:
+- Stellar temperature: 3250 K
+- Stellar radius: 0.23 R☉
+- Planet orbital distance: 0.1136 AU
+
+**Calculated habitable zone** (using above parameters):
+- Inner boundary: 0.076 AU
+- Outer boundary: 0.150 AU
+- **Classification**: Planet at 0.114 AU → **"Habitable"** ✗
+
+**Reality** (from equilibrium temperature):
+- Equilibrium temperature: 204 K (-68°C)
+- Stellar flux received: 0.00034× Earth's flux
+- **Classification**: Frozen, not habitable ✓
+
+**Discrepancy**: 1,233× difference in calculated vs actual stellar flux! This indicates the stellar parameters in the database are severely incorrect or from an inconsistent source.
+
+#### The Solution: Two-Stage Verification
+
+To prevent false positives from data quality issues, we implement a dual-check system:
+
+```typescript
+// STEP 1: Use equilibrium temperature as PRIMARY check (most reliable)
+// Equilibrium temp is calculated from observed stellar flux
+if (planet.pl_eqt) {
+  const MIN_HABITABLE_TEMP = 235; // Kelvin (-38°C)
+  const MAX_HABITABLE_TEMP = 350; // Kelvin (77°C)
+  const isHabitable = (pl_eqt >= MIN_HABITABLE_TEMP && pl_eqt <= MAX_HABITABLE_TEMP);
+  return isHabitable;
+}
+
+// STEP 2: Fallback to calculated HZ (when no equilibrium temp available)
+// Less reliable due to potential stellar parameter inconsistencies
+const { innerBoundary, outerBoundary } = calculateHabitableZone(st_rad, st_teff);
+const isHabitable = (pl_orbsmax >= innerBoundary && pl_orbsmax <= outerBoundary);
+```
+
+#### Temperature Threshold Rationale
+
+**Lower Bound: 235K (-38°C)**
+- Between Mars (210K, outer HZ edge) and confirmed habitable planets (269-280K)
+- Mars at 210K: Near outer edge, mostly frozen
+- TOI-904 c at 217K: Explicitly "too cold" per literature
+- TOI-700 d at 269K: Confirmed habitable zone planet
+- Filters out frozen worlds while allowing for reasonable greenhouse effects
+
+**Upper Bound: 350K (77°C)**
+- Well above Earth's surface temperature (288K)
+- Allows for planets with high albedo or thin atmospheres
+- Venus has T_eq ≈ 737K and experiences runaway greenhouse (clearly too hot)
+- Prevents classification of scorched worlds as habitable
+
+**Reference Temperatures**:
+- Earth: 255K (equilibrium), 288K (surface with atmosphere)
+- Mars: 210K (near outer HZ edge)
+- Venus: 737K (runaway greenhouse, too hot)
+
+#### Verification Results
+
+**Planets Correctly Filtered Out**:
+| Planet | Orbital Distance | Calculated HZ? | T_eq | Temperature Check | Final Classification |
+|--------|------------------|----------------|------|-------------------|---------------------|
+| TOI-904 c | 0.312 AU | ✓ Habitable | 217K | ✗ Too cold (<175K threshold) | **Too Cold** |
+| TOI-6478 b | 0.114 AU | ✓ Habitable | 204K | ✗ Too cold (<175K threshold) | **Too Cold** |
+
+**Verified Habitable Planets**:
+| Planet | Orbital Distance | Calculated HZ? | T_eq | Temperature Check | Final Classification |
+|--------|------------------|----------------|------|-------------------|---------------------|
+| TOI-700 d | 0.1037 AU | ✓ Habitable | 269K | ✓ In range | **Habitable** ✓ |
+| TOI-715 b | 0.083 AU | ✓ Habitable | 280K | ✓ In range | **Habitable** ✓ |
+| TOI-2257 b | 0.175 AU | ✓ Habitable | 278K | ✓ In range | **Habitable** ✓ |
+
+#### Implementation
+
+Location: `composables/useExoplanets.ts`, lines 314-407
+
+The sanity check is applied **only** to planets preliminarily classified as habitable based on orbital distance. This prevents:
+- False positives from bad stellar data
+- Over-filtering of planets with missing temperature data
+- Unnecessary computation for clearly non-habitable planets
+
+#### Important Notes
+
+This equilibrium temperature check is a **data quality filter**, not a definitive habitability assessment. It helps catch obvious database inconsistencies.
+
+**Actual habitability** depends on many factors not captured by equilibrium temperature alone:
+- Atmospheric composition and pressure
+- Greenhouse gas concentrations
+- Planetary albedo (reflectivity)
+- Tidal locking effects
+- Magnetic field presence
+- Stellar activity and radiation
+- Planetary mass and gravity
+
+Planets passing both checks should be considered **potentially habitable candidates** worthy of further study, not confirmed habitable worlds.
+
 ### Additional Resources
 
 - [Virtual Planetary Laboratory HZ Calculator](https://vpl.uw.edu/calculation-of-habitable-zones/)

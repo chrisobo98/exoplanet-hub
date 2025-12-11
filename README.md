@@ -134,6 +134,45 @@ d = √(L / Seff)
 - [Virtual Planetary Laboratory - HZ Calculator](https://vpl.uw.edu/calculation-of-habitable-zones/)
 - [NASA Exoplanet Exploration - Habitable Zone](https://exoplanets.nasa.gov/search-for-life/habitable-zone/)
 
+#### Data Quality Safeguards
+
+The NASA Exoplanet Archive sometimes contains **inconsistent stellar parameters** for newly discovered planets, particularly from TESS. When stellar radius (`st_rad`) or temperature (`st_teff`) values are incorrect or from multiple conflicting sources, the calculated habitable zone boundaries can be wrong.
+
+**Problem Example**:
+- **TOI-6478 b**: Database stellar params suggest HZ at 0.08-0.15 AU, planet orbits at 0.11 AU → Classified as "habitable" ✗
+- **Reality**: Planet receives only 0.00034× Earth's sunlight, equilibrium temp is 204K (-68°C) → Frozen, not habitable ✓
+
+**Solution - Equilibrium Temperature Sanity Check**:
+
+To prevent false positives, we implement a two-stage verification process:
+
+1. **Calculate HZ boundaries** using Kopparapu 2013 formulas (based on stellar parameters)
+2. **Verify with equilibrium temperature** as a sanity check (based on actual energy received)
+
+**Temperature Thresholds**:
+
+```typescript
+// Conservative habitable temperature range
+MIN_HABITABLE_TEMP = 235K  // -38°C
+MAX_HABITABLE_TEMP = 350K  // 77°C
+```
+
+**Rationale**:
+- **Lower bound (235K)**: Between Mars (210K, outer HZ edge) and confirmed habitable planets (269-280K). Filters out frozen worlds while allowing for reasonable greenhouse effects.
+- **Upper bound (350K)**: Well above Earth's 288K surface temp. Allows for high albedo or thin atmospheres. Venus at 737K is clearly too hot.
+- **Earth reference**: 255K equilibrium (no atmosphere), 288K surface (with greenhouse effect)
+
+**Planets Filtered Out**:
+- TOI-904 c: T_eq = 217K → Too cold (outside range)
+- TOI-6478 b: T_eq = 204K → Too cold (outside range)
+
+**Verified Habitable Planets**:
+- TOI-700 d: T_eq ≈ 269K ✓
+- TOI-715 b: T_eq ≈ 280K ✓
+- TOI-2257 b: T_eq ≈ 278K ✓
+
+**Note**: This is a data quality filter, not a definitive habitability assessment. Actual habitability depends on atmospheric composition, greenhouse effects, albedo, tidal locking, and many other factors.
+
 ### 3D Coordinate Conversion
 
 Converts equatorial coordinates (Right Ascension, Declination, Distance) to Cartesian coordinates for 3D visualization:
