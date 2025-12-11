@@ -329,26 +329,33 @@ For detailed scientific formulas, references, and contribution guidelines:
 
 | Feature | This Project | NASA Exoplanet Archive | Eyes on Exoplanets | Exoplanet.eu |
 |---------|--------------|------------------------|-------------------|--------------|
-| **UI/UX** | ⭐⭐⭐⭐⭐ Modern, aerospace-inspired | ⭐⭐⭐ Functional but dated | ⭐⭐⭐⭐ Good but complex | ⭐⭐ Basic table view |
-| **3D Visualization** | ✅ Interactive, color-coded | ❌ No 3D view | ✅ Advanced (requires download) | ❌ 2D plots only |
-| **Mission Planning** | ✅ Travel time calculator | ❌ Not available | ❌ Not available | ❌ Not available |
-| **Habitable Zone Analysis** | ✅ Scientific calculations | ⚠️ Data only, no viz | ⚠️ Limited | ⚠️ Limited |
-| **Real-time Filters** | ✅ Instant, responsive | ⚠️ Complex query builder | ✅ Good filtering | ⚠️ Basic filters |
-| **Mobile Support** | ✅ Fully responsive | ⚠️ Desktop-optimized | ⚠️ Desktop-optimized | ⚠️ Desktop-optimized |
-| **Data Source** | NASA Archive (TESS) | NASA Archive (All) | NASA/JPL (All) | Paris Observatory |
-| **Performance** | ⭐⭐⭐⭐⭐ Fast, optimized | ⭐⭐⭐ Good | ⭐⭐ Slow (large app) | ⭐⭐⭐ Decent |
+| **UI/UX** | Modern, web-based | Professional scientific interface | Immersive 3D experience | Research-focused tables |
+| **3D Visualization** | ✅ WebGL browser-based, Two view modes | ✅ 3D thumbnails per planet | ✅ Full 3D (desktop app) | ❌ 2D plots only |
+| **Interactivity** | Click, drag, zoom, hover labels | Click for individual views | Fly through space | Plot configuration |
+| **Mission Planning** | ✅ Travel time calculator | ❌ Not available | ✅ Spacecraft views | ❌ Not available |
+| **Habitable Zone** | ✅ Kopparapu 2013 formulas + viz | Data available in tables | Visual indicators | Data available |
+| **Filtering** | Real-time multi-parameter | Advanced TAP queries | Mission-based | Multi-parameter |
+| **Mobile Support** | ✅ Fully responsive | Desktop-optimized | Desktop-only app | Desktop-optimized |
+| **Data Scope** | TESS discoveries (~700+) | All confirmed (6000+) | All confirmed (5500+) | All confirmed (5000+) |
+| **Installation** | None (web-based) | None (web-based) | Desktop download required | None (web-based) |
 | **Open Source** | ✅ MIT License | ❌ Closed | ❌ Closed | ❌ Closed |
+
+**Sources**:
+- [NASA Exoplanet Catalog](https://science.nasa.gov/exoplanets/exoplanet-catalog/)
+- [Eyes on Exoplanets](https://science.nasa.gov/eyes/)
+- [Exoplanet.eu](http://exoplanet.eu/)
 
 ### What Makes This Project Stand Out
 
-1. **🎨 Best-in-Class UI/UX**: Modern aerospace-inspired design with glassmorphism effects that rivals commercial applications
-2. **⚡ Superior Performance**: Lightweight custom 3D renderer (no Three.js overhead), instant filtering, 60 FPS rendering
-3. **🔬 Scientific Accuracy**: Habitable zone calculations using Stefan-Boltzmann Law, professional astrophysics formulas
-4. **🚀 Unique Mission Planning**: No other public tool offers theoretical interstellar travel time calculations
-5. **📱 Mobile-First Design**: Fully responsive, works beautifully on phones and tablets
-6. **🆓 Completely Free & Open Source**: MIT licensed, deploy your own instance, learn from the code
-7. **💻 Modern Tech Stack**: Vue 3, Nuxt 3, TypeScript, Tailwind CSS - production-ready architecture
-8. **📊 Comprehensive Data**: 20+ properties per planet with null-safe rendering
+1. **🌐 Web-Based 3D**: Full Three.js visualization in the browser - no downloads or installations required
+2. **📱 Mobile-First Design**: Fully responsive interface that works on phones, tablets, and desktops
+3. **🔬 Scientific Transparency**: Open-source Kopparapu 2013 formulas with full documentation and peer-reviewed citations
+4. **🚀 Educational Mission Planning**: Unique interstellar travel calculator comparing theoretical propulsion systems
+5. **🎯 TESS Focus**: Specialized for NASA's newest exoplanet discoveries (2018-present)
+6. **🆓 Completely Open Source**: MIT licensed - fork it, learn from it, contribute to it
+7. **⚡ Modern Stack**: Vue 3, Nuxt 3, Three.js, TypeScript - learn cutting-edge web development
+8. **🎓 Learning Tool**: Perfect for students, educators, and space enthusiasts to explore real NASA data
+9. **📊 Comprehensive Documentation**: CALCULATIONS.md explains every formula with academic references
 
 ### Perfect For
 
