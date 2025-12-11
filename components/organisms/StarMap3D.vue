@@ -1,64 +1,30 @@
 <!--
-  StarMap3D Component (Organism)
+  StarMap3D Component (Organism) - Three.js Implementation
 
-  Interactive 3D visualization of TESS-discovered exoplanets in spatial coordinates.
-
-  Purpose:
-  Renders an interactive 3D star map showing the spatial distribution of
-  exoplanets discovered by the TESS mission, with color-coding based on
-  habitable zone classification.
+  Professional 3D visualization of TESS-discovered exoplanets using Three.js.
+  Inspired by NASA's Exoplanet Catalog visualization.
 
   Features:
-  - 3D visualization using HTML5 Canvas and manual 3D transformations
-  - Interactive camera controls (drag to rotate, zoom buttons)
-  - Auto-rotation mode for passive viewing
-  - Color-coded planets (green=habitable, red=hot, blue=cold)
-  - Perspective projection for depth perception
-  - Size scaling based on planet radius
-  - Star field background for visual context
-  - Sun positioned at origin (0,0,0)
+  - True 3D rendering with WebGL (Three.js)
+  - Mouse wheel zoom
+  - Interactive camera controls (orbit controls)
+  - Multiple view modes: Star View, System View
+  - Planetary orbits visualization
+  - Habitable zone indicators
+  - Label system with toggle
+  - Fullscreen mode
+  - Settings panel overlay
+  - Distance indicators
 
-  Technical Implementation:
-  - Manual 3D math (no Three.js dependency for lightweight bundle)
-  - Rotation matrices for X and Y axes
-  - Perspective projection: scale = 1000 / (1000 + z)
-  - Request Animation Frame for smooth auto-rotation
-  - Reactive Vue refs for camera state
+  Views:
+  - Star View: Shows all exoplanet systems in 3D space
+  - System View: Focuses on one system with orbits
 
-  Coordinate System:
-  - Origin: Sol (our Sun) at canvas center
-  - X-axis: Right Ascension 0° (Vernal Equinox)
-  - Y-axis: Right Ascension 90° (East)
-  - Z-axis: Declination 90° (North Celestial Pole)
-  - Units: Parsecs (converted to screen pixels with scaling)
-
-  Performance:
-  - Canvas rendering (hardware accelerated)
-  - ~437 planets rendered at 60fps
-  - Efficient 3D transformations (matrix math)
-  - Minimal DOM updates via Vue reactivity
-
-  Scientific Accuracy:
-  - Real celestial coordinates from NASA Exoplanet Archive
-  - Accurate 3D positions (RA, Dec, Distance → X, Y, Z)
-  - Habitable zone calculations from stellar properties
-  - Realistic perspective projection
-
-  User Interactions:
-  - Drag: Rotate camera around origin
-  - Zoom In/Out: Scale view (0.3x to 3x)
-  - Reset View: Return to default orientation
-  - Auto-Rotate: Toggle smooth rotation animation
-
-  Visual Design:
-  - Dark space background (#0f0a1f)
-  - 200 procedural stars for context
-  - Sun rendered as orange gradient sphere
-  - Planet glow effects for visibility
-  - Color legend for interpretation
-
-  Examples:
-  <OrganismsStarMap3D />
+  Technical:
+  - Three.js for 3D rendering
+  - OrbitControls for camera manipulation
+  - CSS2DRenderer for labels
+  - Responsive and performant
 -->
 <template>
   <!-- Loading State -->
@@ -75,846 +41,994 @@
   </div>
 
   <!-- Main Content -->
-  <div v-else class="space-y-6">
-    <!-- Instructions: User guide explaining the visualization -->
+  <div v-else class="space-y-4">
+    <!-- Work in Progress Notice -->
     <div
-      class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-6"
+      class="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 backdrop-blur-sm border border-yellow-400/30 rounded-lg p-4"
     >
       <div class="flex items-start gap-3">
-        <Info class="w-5 h-5 text-purple-400 mt-1" />
+        <Info class="w-5 h-5 text-yellow-400 mt-1 flex-shrink-0" />
+        <div class="flex-1">
+          <h3 class="text-white text-lg font-semibold mb-2 flex items-center gap-2">
+            ⚠️ Work in Progress
+          </h3>
+          <div class="text-yellow-100 text-sm space-y-2">
+            <p>
+              <strong>Known Issue:</strong> Some spatial calculations are still being refined.
+              Planets in Star View may appear closer to our Sun than scientifically accurate.
+            </p>
+            <details class="mt-2">
+              <summary class="cursor-pointer text-yellow-200 hover:text-yellow-100 font-medium">
+                View Technical Details & Calculations
+              </summary>
+              <div class="mt-2 space-y-2 text-xs text-yellow-100/90 bg-black/20 p-3 rounded">
+                <p><strong>Habitable Zone:</strong> Kopparapu et al. (2013) formulation</p>
+                <p><strong>Coordinates:</strong> RA/Dec/Distance → Cartesian (X, Y, Z)</p>
+                <p><strong>Star View Filter:</strong> Only showing systems >30 parsecs (~98 ly) from Sun</p>
+                <p><strong>System View Scaling:</strong> Square root function (√AU × 40)</p>
+                <p><strong>Reference:</strong> <a href="https://iopscience.iop.org/article/10.1088/0004-637X/765/2/131" target="_blank" class="underline">ApJ 765, 131 (2013)</a></p>
+                <p class="text-yellow-200 mt-2">
+                  <strong>Contributing:</strong> This is open source! Help us improve the calculations on GitHub.
+                </p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instructions Banner -->
+    <div
+      class="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-sm border border-purple-400/30 rounded-lg p-4"
+    >
+      <div class="flex items-start gap-3">
+        <Info class="w-5 h-5 text-purple-400 mt-1 flex-shrink-0" />
         <div>
-          <h3 class="text-white text-lg font-semibold mb-2">
+          <h3 class="text-white text-lg font-semibold mb-1">
             Interactive 3D Star Map
           </h3>
           <p class="text-purple-200 text-sm">
-            This visualization shows the spatial distribution of TESS-discovered
-            exoplanets. Drag to rotate the view, use the controls to zoom, or
-            enable auto-rotation. Colors indicate habitable zone status:
-            <span class="text-green-400">green (habitable)</span>,
-            <span class="text-red-400"> red (too hot)</span>,
-            <span class="text-blue-400">blue (too cold)</span>.
+            <strong>Drag</strong> to rotate • <strong>Scroll</strong> to zoom • <strong>Right-click + drag</strong> to pan • <strong>Click planets</strong> to view their system
           </p>
         </div>
       </div>
     </div>
 
-    <!--
-      Camera Controls: Interactive buttons for view manipulation
-      - Zoom In/Out: Scale the view (0.3x to 3x range)
-      - Reset View: Return to default orientation
-      - Auto-Rotate: Toggle continuous rotation animation
-    -->
-    <div
-      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-4"
-    >
-      <div class="flex flex-wrap gap-3">
-        <!--
-          Zoom In Button: Increase zoom by 0.2, capped at 3x
-          Math.min ensures we never exceed 3x zoom
-        -->
-        <button
-          @click="zoom = Math.min(zoom + 0.2, 3)"
-          class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-        >
-          <ZoomIn class="w-4 h-4" />
-          Zoom In
-        </button>
+    <!-- Main Visualization Container -->
+    <div class="relative bg-black/50 backdrop-blur-sm border border-purple-500/20 rounded-lg overflow-hidden">
+      <!-- Three.js Canvas Container -->
+      <div ref="containerRef" class="w-full h-[700px] relative">
+        <!-- Controls Overlay - Top Right -->
+        <div class="absolute top-4 right-4 z-10 space-y-2">
+          <!-- View Mode Selector -->
+          <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 rounded-lg p-3 space-y-2">
+            <div class="text-white text-xs font-semibold mb-2">VIEW MODE</div>
+            <button
+              @click="viewMode = 'star'"
+              :class="[
+                'w-full px-3 py-1.5 text-sm rounded transition-colors',
+                viewMode === 'star'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-purple-900/50 text-purple-300 hover:bg-purple-800/50'
+              ]"
+            >
+              Star View
+            </button>
+            <button
+              @click="viewMode = 'system'"
+              :class="[
+                'w-full px-3 py-1.5 text-sm rounded transition-colors',
+                viewMode === 'system'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-purple-900/50 text-purple-300 hover:bg-purple-800/50'
+              ]"
+            >
+              System View
+            </button>
+          </div>
 
-        <!--
-          Zoom Out Button: Decrease zoom by 0.2, minimum 0.3x
-          Math.max ensures we never zoom out too far
-        -->
-        <button
-          @click="zoom = Math.max(zoom - 0.2, 0.3)"
-          class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-        >
-          <ZoomOut class="w-4 h-4" />
-          Zoom Out
-        </button>
+          <!-- System Selector (only in System View) -->
+          <div
+            v-if="viewMode === 'system'"
+            class="bg-black/80 backdrop-blur-md border border-purple-500/30 rounded-lg p-3"
+          >
+            <div class="text-white text-xs font-semibold mb-2">SYSTEM</div>
+            <select
+              v-model="selectedSystem"
+              class="w-full bg-purple-950/80 border border-purple-500/30 rounded px-2 py-1.5 text-white text-sm focus:outline-none focus:border-purple-400"
+            >
+              <option v-for="system in systems" :key="system" :value="system">
+                {{ system }}
+              </option>
+            </select>
+          </div>
 
-        <!--
-          Reset View Button: Return to initial camera state
-          Calls resetView() to reset rotation, zoom, and re-enable auto-rotate
-        -->
-        <button
-          @click="resetView"
-          class="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-        >
-          <RotateCcw class="w-4 h-4" />
-          Reset View
-        </button>
+          <!-- Settings Panel -->
+          <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 rounded-lg p-3 space-y-2">
+            <div class="text-white text-xs font-semibold mb-2">SETTINGS</div>
 
-        <!--
-          Auto-Rotate Toggle: Enable/disable smooth rotation animation
-          - Green when active (user wants passive viewing)
-          - Gray when inactive (user wants manual control)
-        -->
-        <button
-          @click="autoRotate = !autoRotate"
-          :class="[
-            'flex items-center gap-2 px-4 py-2 rounded-lg transition-colors',
-            autoRotate
-              ? 'bg-green-600 hover:bg-green-700 text-white'
-              : 'bg-gray-600 hover:bg-gray-700 text-white',
-          ]"
-        >
-          <Camera class="w-4 h-4" />
-          {{ autoRotate ? "Auto-Rotate On" : "Auto-Rotate Off" }}
-        </button>
-      </div>
+            <!-- Labels Toggle -->
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input
+                v-model="showLabels"
+                type="checkbox"
+                class="w-4 h-4 rounded border-purple-500/30 bg-purple-950/50 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              />
+              <span class="text-purple-200 text-sm">Labels</span>
+            </label>
 
-      <!--
-        Camera State Display: Real-time feedback for current view settings
-        - Zoom level (0.3x to 3.0x)
-        - Rotation angles in radians (X=pitch, Y=yaw)
-      -->
-      <div class="mt-3 text-purple-200 text-sm">
-        Zoom: {{ zoom.toFixed(1) }}x | Rotation: X={{ rotation.x.toFixed(2) }},
-        Y={{ rotation.y.toFixed(2) }}
-      </div>
-    </div>
+            <!-- Orbits Toggle (System View only) -->
+            <label
+              v-if="viewMode === 'system'"
+              class="flex items-center gap-2 cursor-pointer"
+            >
+              <input
+                v-model="showOrbits"
+                type="checkbox"
+                class="w-4 h-4 rounded border-purple-500/30 bg-purple-950/50 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              />
+              <span class="text-purple-200 text-sm">Orbits</span>
+            </label>
 
-    <!--
-      Canvas Container: Renders the 3D star map
-      - 1000x700 native resolution for crisp rendering
-      - w-full responsive width (canvas scales via CSS)
-      - Mouse event handlers for drag rotation
-      - Cursor changes to indicate draggable (grab → grabbing)
-    -->
-    <div
-      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6"
-    >
-      <canvas
-        ref="canvasRef"
-        width="1000"
-        height="700"
-        class="w-full cursor-grab active:cursor-grabbing rounded-lg"
-        @mousedown="handleMouseDown"
-        @mousemove="handleMouseMove"
-        @mouseup="handleMouseUp"
-        @mouseleave="handleMouseUp"
-      />
-    </div>
+            <!-- Habitable Zone Toggle (System View only) -->
+            <label
+              v-if="viewMode === 'system'"
+              class="flex items-center gap-2 cursor-pointer"
+            >
+              <input
+                v-model="showHabitableZone"
+                type="checkbox"
+                class="w-4 h-4 rounded border-purple-500/30 bg-purple-950/50 text-purple-600 focus:ring-purple-500 focus:ring-offset-0"
+              />
+              <span class="text-purple-200 text-sm">Habitable Zone</span>
+            </label>
+          </div>
 
-    <!--
-      Legend: Color-code explanation for habitable zone classification
-      Uses AtomsLegendItem components with matching visualization colors
-    -->
-    <div
-      class="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6"
-    >
-      <h3 class="text-white text-lg font-semibold mb-4">Legend</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <AtomsLegendItem
-          color="#22c55e"
-          label="Habitable Zone"
-          description="Could support liquid water"
-        />
-        <AtomsLegendItem
-          color="#ef4444"
-          label="Too Hot"
-          description="Too close to host star"
-        />
-        <AtomsLegendItem
-          color="#3b82f6"
-          label="Too Cold"
-          description="Too far from host star"
-        />
+          <!-- Action Buttons -->
+          <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 rounded-lg p-2 space-y-2">
+            <button
+              @click="resetCamera"
+              class="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm transition-colors"
+            >
+              <RotateCcw class="w-4 h-4" />
+              Reset
+            </button>
+            <button
+              @click="toggleFullscreen"
+              class="w-full flex items-center justify-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm transition-colors"
+            >
+              <Maximize2 class="w-4 h-4" />
+              Fullscreen
+            </button>
+          </div>
+        </div>
+
+        <!-- Legend - Bottom Left -->
+        <div class="absolute bottom-4 left-4 z-10">
+          <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 rounded-lg p-3 space-y-1.5">
+            <div class="text-white text-xs font-semibold mb-1">LEGEND</div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <span class="text-purple-200 text-xs">Our Sun</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+              <span class="text-purple-200 text-xs">Habitable</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-red-500"></div>
+              <span class="text-purple-200 text-xs">Too Hot</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full bg-blue-400"></div>
+              <span class="text-purple-200 text-xs">Too Cold</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-/**
- * StarMap3D Component Script
- *
- * 3D rendering and interaction logic for the exoplanet star map.
- *
- * Key Technologies:
- * - HTML5 Canvas 2D Context (no WebGL for simplicity)
- * - Manual 3D math (rotation matrices, perspective projection)
- * - Request Animation Frame for smooth animations
- * - Vue reactivity for camera state
- *
- * Rendering Pipeline:
- * 1. Clear canvas and draw background (space color + stars)
- * 2. Draw Sun at origin (radial gradient sphere)
- * 3. For each exoplanet:
- *    a. Apply rotation matrices (Y-axis → X-axis)
- *    b. Apply perspective projection
- *    c. Determine color based on habitable zone
- *    d. Draw planet with size based on radius
- *    e. Draw glow effect for visibility
- *
- * Performance Optimizations:
- * - Single canvas context (no repeated getContext calls)
- * - Efficient transformation math (precompute trig values)
- * - RequestAnimationFrame only when auto-rotating
- * - Deep watch on rotation/zoom to avoid unnecessary redraws
- */
-import { ref, onMounted, watch } from "vue";
-import { Camera, RotateCcw, ZoomIn, ZoomOut, Info } from "lucide-vue-next";
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { Info, RotateCcw, Maximize2 } from "lucide-vue-next";
 import { useExoplanets } from "@/composables/useExoplanets";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 // ============================================================================
 // COMPOSABLE & STATE
 // ============================================================================
 
-/**
- * Exoplanet data and utilities from global composable
- * - exoplanets: Array of exoplanet objects with 3D coordinates
- * - loading: Loading state indicator
- * - fetchExoplanets: Function to load data from NASA API
- * - isInHabitableZone: Function to classify planet habitability
- */
-const { exoplanets, loading, fetchExoplanets, isInHabitableZone } = useExoplanets();
-
-/**
- * Canvas reference for rendering
- * Template ref bound to <canvas> element
- */
-const canvasRef = ref<HTMLCanvasElement | null>(null);
-
-/**
- * Camera rotation state in radians
- * - x: Rotation around X-axis (pitch, up/down)
- * - y: Rotation around Y-axis (yaw, left/right)
- *
- * Rotation Order: Y-axis first, then X-axis
- * This avoids gimbal lock for typical viewing angles
- */
-const rotation = ref({ x: 0, y: 0 });
-
-/**
- * Zoom level (scale multiplier)
- * Range: 0.3 (zoomed out) to 3.0 (zoomed in)
- * Default: 1.0 (neutral view)
- */
-const zoom = ref(1);
-
-/**
- * Mouse drag state for camera rotation
- * true: User is dragging, update rotation on mouse move
- * false: User released mouse, ignore mouse movement
- */
-const isDragging = ref(false);
-
-/**
- * Last mouse position for delta calculation
- * Used to compute rotation change during drag:
- * deltaX = currentX - lastX
- * deltaY = currentY - lastY
- */
-const lastMouse = ref({ x: 0, y: 0 });
-
-/**
- * Auto-rotation toggle state
- * true: Continuously rotate Y-axis for passive viewing
- * false: Manual control only (user dragging)
- *
- * Automatically disabled when user starts dragging
- */
-const autoRotate = ref(true);
-
-/**
- * Precomputed star opacities for background star field
- * Computed once and reused for performance
- * Array of 200 deterministic opacity values (0.2 to 0.7)
- */
-let starOpacities: number[] | null = null;
+const { exoplanets, loading, fetchExoplanets, isInHabitableZone, calculateHabitableZone } =
+  useExoplanets();
 
 // ============================================================================
-// LIFECYCLE & WATCHERS
+// REFS
 // ============================================================================
 
-/**
- * Component initialization
- *
- * Process:
- * 1. Fetch exoplanet data from NASA API (if not already loaded)
- * 2. Initial render of the scene
- * 3. Start animation loop for auto-rotation
- *
- * Animation Loop:
- * Uses requestAnimationFrame for 60fps smooth rotation
- * Only increments rotation.y when autoRotate is enabled
- * Runs indefinitely (checked every frame)
- */
+const containerRef = ref<HTMLDivElement | null>(null);
+
+// Three.js core objects
+let scene: THREE.Scene;
+let camera: THREE.PerspectiveCamera;
+let renderer: THREE.WebGLRenderer;
+let controls: OrbitControls;
+let animationFrameId: number;
+let raycaster: THREE.Raycaster;
+let mouse: THREE.Vector2;
+
+// Label tracking
+const labels: Map<string, HTMLDivElement> = new Map();
+const hoveredPlanet = ref<string | null>(null);
+
+// ============================================================================
+// VIEW STATE
+// ============================================================================
+
+const viewMode = ref<"star" | "system">("star");
+const selectedSystem = ref<string>("");
+const showLabels = ref(true);
+const showOrbits = ref(true);
+const showHabitableZone = ref(true);
+
+// ============================================================================
+// COMPUTED SYSTEMS
+// ============================================================================
+
+// Get unique systems grouped by hostname
+const systems = computed(() => {
+  const systemSet = new Set(exoplanets.value.map(p => p.hostname));
+  return Array.from(systemSet).sort();
+});
+
+// ============================================================================
+// LIFECYCLE
+// ============================================================================
+
 onMounted(async () => {
-  // Only fetch if data not already loaded (prevents reload on tab switch)
+  // Only fetch if data not already loaded
   if (exoplanets.value.length === 0) {
     await fetchExoplanets();
   }
 
-  // Initial render
-  drawScene();
+  // Set first system as default
+  if (systems.value.length > 0) {
+    selectedSystem.value = systems.value[0];
+  }
 
-  /**
-   * Auto-rotation animation loop
-   *
-   * Recursively calls itself via requestAnimationFrame to:
-   * 1. Check if auto-rotation is enabled
-   * 2. If yes, increment Y-axis rotation by 0.005 radians (~0.29°)
-   * 3. Redraw scene with new rotation
-   * 4. Schedule next frame
-   *
-   * Performance:
-   * - Only redraws when rotation changes (autoRotate=true)
-   * - Manual draws handled by watch() below
-   * - ~60 FPS on modern browsers
-   */
-  const animate = () => {
-    if (autoRotate.value) {
-      rotation.value.y += 0.005; // Slow, smooth rotation
-      drawScene();
-    }
-    requestAnimationFrame(animate); // Schedule next frame
-  };
-  animate(); // Start the loop
+  // Initialize Three.js scene
+  initThreeJS();
+
+  // Start animation loop
+  animate();
+
+  // Handle window resize
+  window.addEventListener("resize", handleResize);
 });
 
-/**
- * Watch camera state changes and redraw scene
- *
- * Triggers on:
- * - rotation.x or rotation.y changes (user drag or auto-rotate)
- * - zoom level changes (user zoom buttons)
- *
- * deep: true enables watching nested object properties (rotation.x, rotation.y)
- *
- * Why separate from animate loop?
- * - Manual camera changes (drag, zoom) need immediate redraw
- * - Auto-rotation handled by animate() to avoid duplicate draws
- * - Watch ensures UI responsiveness for user interactions
- */
-watch(
-  [rotation, zoom],
-  () => {
-    drawScene();
-  },
-  { deep: true }
-);
+onUnmounted(() => {
+  // Cleanup
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
+  clearLabels();
+  hoveredPlanet.value = null;
+  if (renderer) {
+    renderer.domElement.removeEventListener("click", handleClick);
+    renderer.domElement.removeEventListener("mousemove", handleMouseMove);
+    renderer.dispose();
+  }
+  if (controls) {
+    controls.dispose();
+  }
+  window.removeEventListener("resize", handleResize);
+});
 
 // ============================================================================
-// RENDERING FUNCTIONS
+// THREE.JS INITIALIZATION
 // ============================================================================
 
-/**
- * Main rendering function - draws the entire 3D scene
- *
- * Rendering Pipeline:
- * 1. Clear canvas and fill with dark space background
- * 2. Draw procedural star field for visual context
- * 3. Draw Sun at origin (center of canvas)
- * 4. For each exoplanet:
- *    - Apply 3D rotation transformations
- *    - Apply perspective projection
- *    - Color based on habitable zone
- *    - Draw planet and glow effect
- *
- * Performance:
- * - Called on every frame when auto-rotating
- * - Called on user interaction (drag, zoom)
- * - ~437 planets rendered at 60fps
- * - Hardware accelerated via canvas
- *
- * 3D Math Overview:
- * - Uses rotation matrices (not quaternions for simplicity)
- * - Y-axis rotation applied first (yaw), then X-axis (pitch)
- * - Perspective projection: scale = 1000 / (1000 + z)
- * - Larger z values (farther away) = smaller on screen
- */
-function drawScene() {
-  // Get canvas reference (may be null before mount)
-  const canvas = canvasRef.value;
-  if (!canvas) return;
+function initThreeJS() {
+  if (!containerRef.value) return;
 
-  // Get 2D rendering context (not WebGL for simplicity)
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  const width = containerRef.value.clientWidth;
+  const height = containerRef.value.clientHeight;
 
-  // Canvas dimensions (fixed 1000x700)
-  const width = canvas.width;
-  const height = canvas.height;
+  // Create scene
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0f0a1f); // Dark space background
 
-  // ====================================
-  // Step 1: Clear Canvas & Background
-  // ====================================
+  // Create camera
+  camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
+  camera.position.set(0, 50, 200);
 
-  /**
-   * Fill entire canvas with dark space color
-   * #0f0a1f: Very dark purple (nearly black)
-   * Creates the "deep space" aesthetic
-   */
-  ctx.fillStyle = "#0f0a1f";
-  ctx.fillRect(0, 0, width, height);
+  // Create renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  containerRef.value.appendChild(renderer.domElement);
 
-  // ====================================
-  // Step 2: Draw Star Field Background
-  // ====================================
+  // Create controls
+  controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 10;
+  controls.maxDistance = 1000;
 
-  /**
-   * Procedural star field generation
-   *
-   * Technique: Deterministic pseudo-random positions
-   * - Uses prime number multipliers (137.508, 97.342)
-   * - Modulo ensures stars wrap within canvas bounds
-   * - Same stars appear in same positions every frame
-   * - No random() call needed per frame (performance)
-   *
-   * Visual Effect:
-   * - 200 small white stars
-   * - Random opacity (0.2 to 0.7) for depth variation
-   * - 1x1 pixel size for distant star appearance
-   */
-  ctx.fillStyle = "#ffffff";
+  // Create raycaster for click detection
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
 
-  /**
-   * Precompute star opacities once for performance
-   * Only computed on first call, then cached
-   * Uses deterministic pseudo-random function for consistent stars
-   */
-  if (!starOpacities) {
-    starOpacities = Array.from({ length: 200 }, (_, i) => {
-      // Simple deterministic pseudo-random function based on index
-      const seed = Math.sin(i * 9999) * 10000;
-      return (seed - Math.floor(seed)) * 0.5 + 0.2;
-    });
+  // Add click handler
+  renderer.domElement.addEventListener("click", handleClick);
+
+  // Add mousemove handler for hover detection
+  renderer.domElement.addEventListener("mousemove", handleMouseMove);
+
+  // Add lights
+  const ambientLight = new THREE.AmbientLight(0x404040, 2);
+  scene.add(ambientLight);
+
+  const pointLight = new THREE.PointLight(0xffffff, 2, 10000);
+  pointLight.position.set(0, 0, 0);
+  scene.add(pointLight);
+
+  // Add star field
+  addStarField();
+
+  // Add Sun at origin with habitable zone
+  addSun();
+  if (showHabitableZone.value) {
+    addSunHabitableZone();
   }
 
-  for (let i = 0; i < 200; i++) {
-    // Deterministic position using prime number hash
-    const x = (i * 137.508) % width;
-    const y = (i * 97.342) % height;
+  // Render based on view mode
+  renderStarView();
+}
 
-    // Use precomputed deterministic opacity
-    ctx.globalAlpha = starOpacities[i];
+// ============================================================================
+// STAR FIELD
+// ============================================================================
 
-    // Draw single pixel star
-    ctx.fillRect(x, y, 1, 1);
+function addStarField() {
+  const starsGeometry = new THREE.BufferGeometry();
+  const starPositions = [];
+
+  for (let i = 0; i < 1000; i++) {
+    const x = (Math.random() - 0.5) * 2000;
+    const y = (Math.random() - 0.5) * 2000;
+    const z = (Math.random() - 0.5) * 2000;
+    starPositions.push(x, y, z);
   }
 
-  // Reset alpha for opaque rendering
-  ctx.globalAlpha = 1;
+  starsGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(starPositions, 3)
+  );
 
-  // ====================================
-  // Step 3: Calculate Canvas Center
-  // ====================================
+  const starsMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 1,
+    transparent: true,
+    opacity: 0.6,
+  });
 
-  /**
-   * Center point coordinates
-   * - cx: Horizontal center (500 for 1000px width)
-   * - cy: Vertical center (350 for 700px height)
-   *
-   * Sun positioned here (origin of 3D space)
-   * All exoplanet coordinates relative to this point
-   */
-  const cx = width / 2;
-  const cy = height / 2;
+  const stars = new THREE.Points(starsGeometry, starsMaterial);
+  scene.add(stars);
+}
 
-  // ====================================
-  // Step 4: Draw Sun at Origin
-  // ====================================
+// ============================================================================
+// SUN
+// ============================================================================
 
-  /**
-   * Radial gradient for Sun glow effect
-   *
-   * Gradient stops:
-   * - Center (0): Bright yellow (#FDB813)
-   * - Middle (0.5): Orange (#FD8813)
-   * - Edge (1): Transparent orange (30% alpha)
-   *
-   * Radius: 15 pixels (represents Sol, our Sun)
-   * Creates realistic solar glow
-   */
-  const sunGradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 15);
-  sunGradient.addColorStop(0, "#FDB813"); // Bright yellow center
-  sunGradient.addColorStop(0.5, "#FD8813"); // Orange middle
-  sunGradient.addColorStop(1, "#FD881330"); // Transparent edge (glow)
+function addSun() {
+  const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+  const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xfdb813 });
+  const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+  sun.name = "Sun";
+  scene.add(sun);
 
-  ctx.fillStyle = sunGradient;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 15, 0, Math.PI * 2); // Full circle (2π radians)
-  ctx.fill();
+  // Add glow
+  const glowGeometry = new THREE.SphereGeometry(7, 32, 32);
+  const glowMaterial = new THREE.MeshBasicMaterial({
+    color: 0xfdb813,
+    transparent: true,
+    opacity: 0.3,
+  });
+  const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+  scene.add(glow);
+}
 
-  /**
-   * Sun label: "Sol"
-   * - Positioned 30 pixels below Sun center
-   * - 12px system font for readability
-   * - Center-aligned with Sun
-   * - Bright yellow color matching Sun
-   */
-  ctx.fillStyle = "#FDB813";
-  ctx.font = "12px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("Sol", cx, cy + 30);
+function addSunHabitableZone() {
+  // Our Sun's habitable zone (G2V star: R=1.0, T=5778K)
+  // Inner: ~0.95 AU, Outer: ~1.67 AU
+  const hzInner = 0.95;
+  const hzOuter = 1.67;
 
-  // ====================================
-  // Step 5: Render Exoplanets
-  // ====================================
+  const hzInnerDist = Math.sqrt(hzInner) * 40;
+  const hzOuterDist = Math.sqrt(hzOuter) * 40;
 
-  /**
-   * Render each exoplanet with 3D transformations
-   *
-   * For each planet:
-   * 1. Get 3D world coordinates (x, y, z in parsecs)
-   * 2. Apply Y-axis rotation (yaw)
-   * 3. Apply X-axis rotation (pitch)
-   * 4. Apply perspective projection
-   * 5. Determine color from habitable zone
-   * 6. Calculate size based on radius + perspective
-   * 7. Draw planet sphere + glow effect
-   */
-  exoplanets.value.forEach((planet) => {
-    /**
-     * Scale factor for 3D world → screen space
-     * - Base scale: 0.5 (fits planets comfortably on screen)
-     * - Multiplied by zoom for user zoom control
-     * - Example: zoom=2.0 → scale=1.0 (2x magnification)
-     */
-    const scale = 0.5 * zoom.value;
+  // Create shaded ring mesh
+  const ringShape = new THREE.Shape();
 
-    /**
-     * Extract 3D coordinates (parsecs)
-     * - x, y, z calculated in useExoplanets composable
-     * - Converted from RA/Dec/Distance celestial coordinates
-     * - Default to 0 if missing data
-     */
-    let x = planet.x || 0;
-    let y = planet.y || 0;
-    let z = planet.z || 0;
-
-    // ========================================
-    // 3D Rotation Transformations
-    // ========================================
-
-    /**
-     * Y-axis rotation (yaw, left/right)
-     *
-     * Rotation matrix around Y-axis:
-     * [ cos(θ)  0  sin(θ) ]
-     * [   0     1    0    ]
-     * [-sin(θ)  0  cos(θ) ]
-     *
-     * Applied first to avoid gimbal lock
-     * Precompute cos/sin for efficiency
-     */
-    const cosY = Math.cos(rotation.value.y);
-    const sinY = Math.sin(rotation.value.y);
-    const rotatedX = x * cosY - z * sinY;
-    const rotatedZ = x * sinY + z * cosY;
-
-    /**
-     * X-axis rotation (pitch, up/down)
-     *
-     * Rotation matrix around X-axis:
-     * [ 1    0       0    ]
-     * [ 0  cos(θ) -sin(θ) ]
-     * [ 0  sin(θ)  cos(θ) ]
-     *
-     * Applied after Y-axis rotation
-     * Uses rotatedZ from previous step
-     */
-    const cosX = Math.cos(rotation.value.x);
-    const sinX = Math.sin(rotation.value.x);
-    const rotatedY = y * cosX - rotatedZ * sinX;
-    const finalZ = y * sinX + rotatedZ * cosX;
-
-    // ========================================
-    // Perspective Projection
-    // ========================================
-
-    /**
-     * Perspective scale factor
-     *
-     * Formula: perspective = focal_distance / (focal_distance + z)
-     * - focal_distance = 1000 (arbitrary, determines FOV)
-     * - Objects farther away (larger z) appear smaller
-     * - Objects closer (smaller z) appear larger
-     *
-     * Clamping:
-    // Clamp finalZ to avoid negative or zero denominators
-    const safeZ = Math.max(finalZ, -990); // Ensures denominator >= 10
-    const perspective = Math.max(0.1, Math.min(2, 1000 / (1000 + safeZ)));
-     * - Max: 2.0 (prevent oversized objects when very close)
-     *
-     * Example:
-     * - z = 0 (at camera): perspective = 1.0 (normal size)
-     * - z = 1000: perspective = 0.5 (half size)
-     * - z = -500 (behind camera): perspective = 2.0 (clamped)
-     */
-    const perspective = Math.max(0.1, Math.min(2, 1000 / (1000 + finalZ)));
-
-    /**
-     * Screen coordinates (pixels)
-     * - Start from canvas center (cx, cy)
-     * - Add rotated world coordinates
-     * - Scale by zoom and perspective
-     * - Y-axis inverted (canvas Y increases downward)
-     */
-    const screenX = cx + rotatedX * scale * perspective;
-    const screenY = cy - rotatedY * scale * perspective;
-
-    // ========================================
-    // Planet Appearance
-    // ========================================
-
-    /**
-     * Color based on habitable zone classification
-     * - Green (#22c55e): Habitable zone (liquid water possible)
-     * - Red (#ef4444): Too hot (too close to star)
-     * - Blue (#3b82f6): Too cold (too far from star)
-     *
-     * Colors match legend in template
-     */
-    const zone = isInHabitableZone(planet);
-    let color =
-      zone === "habitable"
-        ? "#22c55e"
-        : zone === "too-hot"
-        ? "#ef4444"
-        : "#3b82f6";
-
-    /**
-     * Planet size calculation
-     *
-     * Base size:
-     * - Uses pl_rade (radius in Earth radii)
-     * - Multiplied by 2 for visibility
-     * - Clamped between 3 and 12 pixels
-     * - Missing radius defaults to 1 R⊕
-     *
-     * Final size:
-     * - Scaled by perspective (farther = smaller)
-     * - Minimum 3 pixels (always visible, matches base clamp)
-     *
-     * Example:
-     * - Earth-sized (1 R⊕): baseSize = 3px
-     * - Jupiter-sized (11 R⊕): baseSize = 12px (clamped)
-     * - Super-Earth (2 R⊕): baseSize = 4px
-     */
-    const baseSize = Math.max(3, Math.min(12, (planet.pl_rade || 1) * 2));
-    const size = Math.max(2, baseSize * perspective);
-
-    /**
-     * Opacity based on distance
-     * - Farther planets (small perspective) = more transparent
-     * - Closer planets (large perspective) = more opaque
-     * - Range: 0.3 (distant) to 1.0 (close)
-     * - Creates depth perception
-     */
-    const opacity = Math.max(0.3, Math.min(1, perspective));
-
-    // ========================================
-    // Render Planet Sphere
-    // ========================================
-
-    /**
-     * Draw solid planet circle
-     * - Fill with zone color
-     * - Apply opacity for depth
-     * - Draw as filled arc (full circle)
-     */
-    ctx.fillStyle = color;
-    ctx.globalAlpha = opacity;
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
-    ctx.fill();
-
-    // ========================================
-    // Render Planet Glow
-    // ========================================
-
-    /**
-     * Radial gradient glow effect
-     *
-     * Purpose: Increase visibility of small planets
-     *
-     * Gradient:
-     * - Center: Color with 25% opacity (40 hex = 64/255)
-     * - Edge: Fully transparent (00 hex)
-     * - Radius: 2x planet size (soft glow)
-     *
-     * Why glow?
-     * - Small planets (2-3px) hard to see
-     * - Glow makes them discoverable
-     * - Aesthetically pleasing
-     */
-    function hexWithAlpha(baseColor: string, alphaHex: string) {
-      // If already 8-digit hex, just replace alpha
-      if (/^#([A-Fa-f0-9]{8})$/.test(baseColor)) {
-        return baseColor.slice(0, 7) + alphaHex;
-      }
-      // 6-digit hex
-      if (/^#([A-Fa-f0-9]{6})$/.test(baseColor)) {
-        return baseColor + alphaHex;
-      }
-      // 3-digit hex
-      if (/^#([A-Fa-f0-9]{3})$/.test(baseColor)) {
-        const hex = baseColor.replace(
-          /^#([A-Fa-f0-9])([A-Fa-f0-9])([A-Fa-f0-9])$/,
-          (_, r, g, b) => `#${r}${r}${g}${g}${b}${b}`
-        );
-        return hex + alphaHex;
-      }
-      // rgb/rgba string
-      const rgbMatch = baseColor.match(
-        /^rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)(?:,\s*([0-9.]+))?\s*\)$/
-      );
-      if (rgbMatch) {
-        const r = parseInt(rgbMatch[1]);
-        const g = parseInt(rgbMatch[2]);
-        const b = parseInt(rgbMatch[3]);
-        const a = parseInt(alphaHex, 16) / 255;
-        return `rgba(${r},${g},${b},${a})`;
-      }
-      // fallback: just append alpha
-      return baseColor + alphaHex;
+  // Outer circle
+  for (let i = 0; i <= 64; i++) {
+    const angle = (i / 64) * Math.PI * 2;
+    const x = Math.cos(angle) * hzOuterDist;
+    const y = Math.sin(angle) * hzOuterDist;
+    if (i === 0) {
+      ringShape.moveTo(x, y);
+    } else {
+      ringShape.lineTo(x, y);
     }
+  }
 
-    const gradient = ctx.createRadialGradient(
-      screenX,
-      screenY,
-      0,
-      screenX,
-      screenY,
-      size * 2
-    );
-    gradient.addColorStop(0, hexWithAlpha(color, "40")); // 25% opacity at center
-    gradient.addColorStop(1, hexWithAlpha(color, "00")); // 0% opacity at edge
+  // Inner circle (hole)
+  const hole = new THREE.Path();
+  for (let i = 0; i <= 64; i++) {
+    const angle = (i / 64) * Math.PI * 2;
+    const x = Math.cos(angle) * hzInnerDist;
+    const y = Math.sin(angle) * hzInnerDist;
+    if (i === 0) {
+      hole.moveTo(x, y);
+    } else {
+      hole.lineTo(x, y);
+    }
+  }
+  ringShape.holes.push(hole);
 
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, size * 2, 0, Math.PI * 2);
-    ctx.fill();
+  // Create ring mesh
+  const ringGeometry = new THREE.ShapeGeometry(ringShape);
+  const ringMaterial = new THREE.MeshBasicMaterial({
+    color: 0xfdb813, // Yellow/gold for our Sun's HZ
+    transparent: true,
+    opacity: 0.15,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+  ringMesh.rotation.x = -Math.PI / 2;
+  ringMesh.position.y = 0.1;
+  ringMesh.name = "sun_hz_ring";
+  scene.add(ringMesh);
 
-    // Reset alpha to opaque for next planet
-    ctx.globalAlpha = 1;
+  // Boundary lines
+  const hzLineMaterial = new THREE.LineBasicMaterial({
+    color: 0xfdb813,
+    transparent: true,
+    opacity: 0.4,
+  });
+
+  // Inner boundary
+  const innerGeometry = new THREE.BufferGeometry();
+  const innerPoints = [];
+  for (let i = 0; i <= 64; i++) {
+    const a = (i / 64) * Math.PI * 2;
+    innerPoints.push(Math.cos(a) * hzInnerDist, 0, Math.sin(a) * hzInnerDist);
+  }
+  innerGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(innerPoints, 3)
+  );
+  const innerLine = new THREE.Line(innerGeometry, hzLineMaterial);
+  innerLine.name = "sun_hz_inner";
+  scene.add(innerLine);
+
+  // Outer boundary
+  const outerGeometry = new THREE.BufferGeometry();
+  const outerPoints = [];
+  for (let i = 0; i <= 64; i++) {
+    const a = (i / 64) * Math.PI * 2;
+    outerPoints.push(Math.cos(a) * hzOuterDist, 0, Math.sin(a) * hzOuterDist);
+  }
+  outerGeometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(outerPoints, 3)
+  );
+  const outerLine = new THREE.Line(outerGeometry, hzLineMaterial);
+  outerLine.name = "sun_hz_outer";
+  scene.add(outerLine);
+}
+
+// ============================================================================
+// RENDER VIEWS
+// ============================================================================
+
+function renderStarView() {
+  // Clear existing planets and labels
+  const planetsToRemove = scene.children.filter(
+    (child) => child.name && child.name.startsWith("planet_")
+  );
+  planetsToRemove.forEach((planet) => scene.remove(planet));
+  clearLabels();
+  hoveredPlanet.value = null;
+
+  // Add all exoplanets
+  exoplanets.value.forEach((planet) => {
+    if (!planet.x || !planet.y || !planet.z) return;
+
+    // Calculate distance from Sun to filter out planets that are too close
+    const distanceFromSun = Math.sqrt(planet.x ** 2 + planet.y ** 2 + planet.z ** 2);
+
+    // Filter out planets within 30 parsecs (about 98 light years) to prevent crowding near Sun
+    // This gives better spacing and prevents visual overlap
+    if (distanceFromSun < 30) return;
+
+    const zone = isInHabitableZone(planet);
+    let color = 0x3b82f6; // blue (too-cold) default
+    if (zone === "habitable") color = 0x22c55e; // green
+    else if (zone === "too-hot") color = 0xef4444; // red
+
+    const geometry = new THREE.SphereGeometry(2, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(planet.x, planet.z, -planet.y);
+    mesh.name = `planet_${planet.pl_name}`;
+    mesh.userData = { planet }; // Store planet data for raycasting
+
+    scene.add(mesh);
   });
 }
 
-// ============================================================================
-// MOUSE INTERACTION HANDLERS
-// ============================================================================
+function renderSystemView() {
+  // Clear existing objects and labels
+  const toRemove = scene.children.filter(
+    (child) => child.name && (child.name.startsWith("planet_") || child.name.startsWith("orbit_"))
+  );
+  toRemove.forEach((obj) => scene.remove(obj));
+  clearLabels();
+  hoveredPlanet.value = null;
 
-/**
- * Handle mouse button press on canvas
- *
- * Initiates camera rotation via drag interaction.
- *
- * Actions:
- * 1. Set dragging state to true (enables mouse move tracking)
- * 2. Disable auto-rotation (user taking manual control)
- * 3. Store current mouse position as reference point
- *
- * @param {MouseEvent} e - Mouse event containing cursor position
- *
- * User Experience:
- * - Cursor changes to "grabbing" via CSS (active:cursor-grabbing)
- * - Auto-rotation stops immediately
- * - Next mouse move will update camera rotation
- */
-function handleMouseDown(e: MouseEvent) {
-  isDragging.value = true;
-  autoRotate.value = false; // Manual control takes precedence
-  lastMouse.value = { x: e.clientX, y: e.clientY };
+  // Get planets in selected system
+  const systemPlanets = exoplanets.value.filter(
+    (p) => p.hostname === selectedSystem.value
+  );
+
+  if (systemPlanets.length === 0) return;
+
+  // Add central star
+  const starGeometry = new THREE.SphereGeometry(8, 32, 32);
+  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500 });
+  const star = new THREE.Mesh(starGeometry, starMaterial);
+  star.position.set(0, 0, 0);
+  star.name = "planet_star";
+  scene.add(star);
+
+  // Get habitable zone if needed
+  let hzInner = 0;
+  let hzOuter = 0;
+  const refPlanet = systemPlanets.find(p => p.st_rad && p.st_teff);
+  if (refPlanet && refPlanet.st_rad && refPlanet.st_teff) {
+    const hz = calculateHabitableZone(refPlanet.st_rad, refPlanet.st_teff);
+    hzInner = hz.innerBoundary;
+    hzOuter = hz.outerBoundary;
+  }
+
+  // Sort planets by orbital distance for better visualization
+  const sortedPlanets = systemPlanets
+    .map((p, idx) => ({ planet: p, originalIndex: idx }))
+    .sort((a, b) => (a.planet.pl_orbsmax || 0) - (b.planet.pl_orbsmax || 0));
+
+  // Add planets with orbits
+  sortedPlanets.forEach(({ planet, originalIndex }, index) => {
+    if (typeof planet.pl_orbsmax !== "number" || planet.pl_orbsmax <= 0) return;
+
+    // Better scaling for distance: use square root with multiplier
+    // This spreads out close planets while keeping distant ones visible
+    const distance = Math.max(25, Math.sqrt(planet.pl_orbsmax) * 40);
+
+    const zone = isInHabitableZone(planet);
+
+    let color = 0x3b82f6;
+    if (zone === "habitable") color = 0x22c55e;
+    else if (zone === "too-hot") color = 0xef4444;
+
+    // More realistic planet sizing: much smaller relative to star
+    // Scale down by factor of 10-20 compared to star
+    const radius = Math.max(0.5, Math.min((planet.pl_rade || 1) * 0.3, 2));
+    const geometry = new THREE.SphereGeometry(radius, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    // Position on orbit - use original index for angle to spread planets evenly
+    // This ensures planets don't overlap even if they're at similar distances
+    const angle = (originalIndex / systemPlanets.length) * Math.PI * 2;
+    mesh.position.set(Math.cos(angle) * distance, 0, Math.sin(angle) * distance);
+    mesh.name = `planet_${planet.pl_name}`;
+    mesh.userData = { planet };
+
+    scene.add(mesh);
+
+    // Add orbit line if enabled
+    if (showOrbits.value) {
+      const orbitGeometry = new THREE.BufferGeometry();
+      const orbitPoints = [];
+      for (let i = 0; i <= 64; i++) {
+        const a = (i / 64) * Math.PI * 2;
+        orbitPoints.push(Math.cos(a) * distance, 0, Math.sin(a) * distance);
+      }
+      orbitGeometry.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(orbitPoints, 3)
+      );
+      const orbitMaterial = new THREE.LineBasicMaterial({
+        color: 0x666666,
+        transparent: true,
+        opacity: 0.3,
+      });
+      const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+      orbitLine.name = `orbit_${planet.pl_name}`;
+      scene.add(orbitLine);
+    }
+  });
+
+  // Add habitable zone visualization if enabled
+  if (showHabitableZone.value && hzInner > 0 && hzOuter > 0) {
+    // Use same square root scaling as planets for consistency
+    // Don't apply minimum - this was causing the ring to collapse to a line
+    const hzInnerDist = Math.sqrt(hzInner) * 40;
+    const hzOuterDist = Math.sqrt(hzOuter) * 40;
+
+    // Only show ring if there's meaningful space between boundaries (at least 3 units)
+    const ringVisible = (hzOuterDist - hzInnerDist) > 3;
+
+    // Only create shaded ring if it's wide enough to be visible
+    if (ringVisible) {
+      // Create shaded ring mesh for habitable zone
+      const ringShape = new THREE.Shape();
+
+      // Outer circle
+      for (let i = 0; i <= 64; i++) {
+        const angle = (i / 64) * Math.PI * 2;
+        const x = Math.cos(angle) * hzOuterDist;
+        const y = Math.sin(angle) * hzOuterDist;
+        if (i === 0) {
+          ringShape.moveTo(x, y);
+        } else {
+          ringShape.lineTo(x, y);
+        }
+      }
+
+      // Inner circle (hole)
+      const hole = new THREE.Path();
+      for (let i = 0; i <= 64; i++) {
+        const angle = (i / 64) * Math.PI * 2;
+        const x = Math.cos(angle) * hzInnerDist;
+        const y = Math.sin(angle) * hzInnerDist;
+        if (i === 0) {
+          hole.moveTo(x, y);
+        } else {
+          hole.lineTo(x, y);
+        }
+      }
+      ringShape.holes.push(hole);
+
+      // Create mesh from shape
+      const ringGeometry = new THREE.ShapeGeometry(ringShape);
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0x22c55e,
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide,
+        depthWrite: false, // Prevent z-fighting issues
+      });
+      const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+      ringMesh.rotation.x = -Math.PI / 2; // Rotate to lie flat
+      ringMesh.position.y = 0.1; // Slightly above orbital plane to be visible
+      ringMesh.name = "orbit_hz_ring";
+      scene.add(ringMesh);
+    }
+
+    // Inner boundary line
+    const innerGeometry = new THREE.BufferGeometry();
+    const innerPoints = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      innerPoints.push(Math.cos(a) * hzInnerDist, 0, Math.sin(a) * hzInnerDist);
+    }
+    innerGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(innerPoints, 3)
+    );
+    const hzLineMaterial = new THREE.LineBasicMaterial({
+      color: 0x22c55e,
+      transparent: true,
+      opacity: 0.8,
+    });
+    const innerLine = new THREE.Line(innerGeometry, hzLineMaterial);
+    innerLine.name = "orbit_hz_inner";
+    scene.add(innerLine);
+
+    // Outer boundary line
+    const outerGeometry = new THREE.BufferGeometry();
+    const outerPoints = [];
+    for (let i = 0; i <= 64; i++) {
+      const a = (i / 64) * Math.PI * 2;
+      outerPoints.push(Math.cos(a) * hzOuterDist, 0, Math.sin(a) * hzOuterDist);
+    }
+    outerGeometry.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(outerPoints, 3)
+    );
+    const outerLine = new THREE.Line(outerGeometry, hzLineMaterial);
+    outerLine.name = "orbit_hz_outer";
+    scene.add(outerLine);
+  }
+
+  // Adjust camera
+  camera.position.set(0, 150, 200);
+  controls.target.set(0, 0, 0);
+  controls.update();
 }
 
+// ============================================================================
+// ANIMATION LOOP
+// ============================================================================
+
+function animate() {
+  animationFrameId = requestAnimationFrame(animate);
+
+  controls.update();
+
+  // Update label for hovered planet only
+  if (showLabels.value && hoveredPlanet.value) {
+    const label = labels.get(hoveredPlanet.value);
+    const planet = scene.getObjectByName(`planet_${hoveredPlanet.value}`);
+    if (label && planet) {
+      updateLabelPosition(label, planet.position);
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+// ============================================================================
+// EVENT HANDLERS
+// ============================================================================
+
+function handleResize() {
+  if (!containerRef.value) return;
+
+  const width = containerRef.value.clientWidth;
+  const height = containerRef.value.clientHeight;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+function resetCamera() {
+  if (viewMode.value === "star") {
+    camera.position.set(0, 50, 200);
+    controls.target.set(0, 0, 0);
+  } else {
+    camera.position.set(0, 150, 200);
+    controls.target.set(0, 0, 0);
+  }
+  controls.update();
+}
+
+function toggleFullscreen() {
+  if (!containerRef.value) return;
+
+  if (!document.fullscreenElement) {
+    containerRef.value.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// ============================================================================
+// WATCHERS
+// ============================================================================
+
+watch(viewMode, (newMode) => {
+  if (newMode === "star") {
+    renderStarView();
+    camera.position.set(0, 50, 200);
+  } else {
+    renderSystemView();
+    camera.position.set(0, 150, 200);
+  }
+  controls.target.set(0, 0, 0);
+  controls.update();
+});
+
+watch(selectedSystem, () => {
+  if (viewMode.value === "system") {
+    renderSystemView();
+  }
+});
+
+watch(showHabitableZone, (newValue) => {
+  if (viewMode.value === "system") {
+    renderSystemView();
+  } else {
+    // Star View - toggle Sun's habitable zone
+    const sunHZObjects = scene.children.filter(
+      (child) => child.name && child.name.startsWith("sun_hz_")
+    );
+
+    if (newValue && sunHZObjects.length === 0) {
+      // Add Sun's HZ
+      addSunHabitableZone();
+    } else if (!newValue && sunHZObjects.length > 0) {
+      // Remove Sun's HZ
+      sunHZObjects.forEach((obj) => scene.remove(obj));
+    }
+  }
+});
+
+watch(showOrbits, () => {
+  if (viewMode.value === "system") {
+    renderSystemView();
+  }
+});
+
+// ============================================================================
+// LABEL SYSTEM
+// ============================================================================
+
 /**
-    // Update rotation angles (0.01 = sensitivity multiplier)
-    rotation.value.x += dy * 0.01; // Up/down drag → pitch
-    rotation.value.y += dx * 0.01; // Left/right drag → yaw
-
-    // Clamp pitch (rotation.x) to [-π/2, π/2] to prevent flipping
-    const maxPitch = Math.PI / 2;
-    const minPitch = -Math.PI / 2;
-    rotation.value.x = Math.max(minPitch, Math.min(maxPitch, rotation.value.x));
-
-    // Update reference position for next frame
-    lastMouse.value = { x: e.clientX, y: e.clientY };
- * 2. Convert pixel delta to rotation angle (0.01 radians per pixel)
- * 3. Update rotation state (triggers redraw via watch)
- * 4. Store current position for next delta calculation
- *
- * Sensitivity:
- * - 0.01 radians/pixel = ~0.57 degrees/pixel
- * - 100 pixel drag = ~57 degree rotation
- * - Tuned for comfortable, responsive control
- *
- * @param {MouseEvent} e - Mouse event containing current cursor position
- *
- * Performance:
- * - Only processes when isDragging is true (ignores passive hovering)
- * - Watch() triggers drawScene() automatically
- * - No manual render call needed (Vue reactivity handles it)
- *
- * Controls:
- * - Horizontal drag (dx): Rotates around Y-axis (yaw, left/right)
- * - Vertical drag (dy): Rotates around X-axis (pitch, up/down)
+ * Add a 3D label to a planet
+ * Creates an HTML div positioned at the planet's 3D location
  */
-function handleMouseMove(e: MouseEvent) {
-  if (isDragging.value) {
-    // Calculate mouse movement since last frame
-    const dx = e.clientX - lastMouse.value.x; // Horizontal movement
-    const dy = e.clientY - lastMouse.value.y; // Vertical movement
+function addLabel(planetName: string, position: THREE.Vector3) {
+  const label = document.createElement("div");
+  label.className = "planet-label";
+  label.textContent = planetName;
+  label.style.position = "absolute";
+  label.style.color = "white";
+  label.style.fontSize = "11px";
+  label.style.fontWeight = "500";
+  label.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+  label.style.padding = "2px 6px";
+  label.style.borderRadius = "3px";
+  label.style.border = "1px solid rgba(147, 51, 234, 0.5)";
+  label.style.pointerEvents = "none";
+  label.style.whiteSpace = "nowrap";
+  label.style.userSelect = "none";
 
-    // Update rotation angles (0.01 = sensitivity multiplier)
-    rotation.value.x += dy * 0.01; // Up/down drag → pitch
-    rotation.value.y += dx * 0.01; // Left/right drag → yaw
+  // Append to container
+  if (containerRef.value) {
+    containerRef.value.appendChild(label);
+    labels.set(planetName, label);
 
-    // Update reference position for next frame
-    lastMouse.value = { x: e.clientX, y: e.clientY };
+    // Update position immediately
+    updateLabelPosition(label, position);
   }
 }
 
 /**
- * Handle mouse button release or cursor leaving canvas
- *
- * Ends drag interaction but preserves current rotation.
- *
- * Actions:
- * - Set dragging state to false (stops rotation updates)
- * - Cursor returns to "grab" state via CSS
- * - Camera stays at current rotation (does not reset)
- * - Auto-rotation remains disabled (user explicitly stopped it)
- *
- * Why mouseleave?
- * - Prevents "sticky" drag if user releases outside canvas
- * - Common UX pattern for drag interactions
- * - Avoids unexpected rotation when cursor re-enters
- *
- * Note: Does NOT re-enable auto-rotation
- * User must click "Reset View" or "Auto-Rotate" button
+ * Update label position based on 3D coordinates
+ * Converts 3D world position to 2D screen coordinates
  */
-function handleMouseUp() {
-  isDragging.value = false;
+function updateLabelPosition(label: HTMLDivElement, position: THREE.Vector3) {
+  const vector = position.clone();
+  vector.project(camera);
+
+  const x = (vector.x * 0.5 + 0.5) * containerRef.value!.clientWidth;
+  const y = (-(vector.y * 0.5) + 0.5) * containerRef.value!.clientHeight;
+
+  label.style.left = `${x}px`;
+  label.style.top = `${y}px`;
+  label.style.transform = "translate(-50%, -100%)"; // Center above planet
+}
+
+/**
+ * Clear all labels from the scene
+ */
+function clearLabels() {
+  labels.forEach((label) => {
+    if (label.parentNode) {
+      label.parentNode.removeChild(label);
+    }
+  });
+  labels.clear();
 }
 
 // ============================================================================
-// VIEW CONTROL FUNCTIONS
+// MOUSE INTERACTION
 // ============================================================================
 
 /**
- * Reset camera to initial state
- *
- * Returns all camera parameters to default values:
- * - Rotation: (0, 0) - Front-facing view
- * - Zoom: 1.0 - Neutral magnification
- * - Auto-Rotate: Enabled - Passive viewing mode
- *
- * Triggered by "Reset View" button in UI.
- *
- * Use Cases:
- * - User gets disoriented after rotating
- * - User wants to return to starting view
- * - User wants to restart auto-rotation
- *
- * Note: Redraw triggered automatically via watch()
+ * Handle mouse move for hover detection
+ * Shows label only for the planet being hovered over
  */
-function resetView() {
-  rotation.value = { x: 0, y: 0 };
-  zoom.value = 1;
-  autoRotate.value = true;
+function handleMouseMove(event: MouseEvent) {
+  if (!containerRef.value || !showLabels.value) return;
+
+  // Calculate mouse position in normalized device coordinates (-1 to +1)
+  const rect = containerRef.value.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  // Update the picking ray with the camera and mouse position
+  raycaster.setFromCamera(mouse, camera);
+
+  // Calculate objects intersecting the picking ray
+  const intersects = raycaster.intersectObjects(scene.children);
+
+  // Find first planet intersection
+  let foundPlanet: string | null = null;
+  for (const intersect of intersects) {
+    if (intersect.object.name && intersect.object.name.startsWith("planet_")) {
+      const planet = intersect.object.userData.planet;
+      if (planet && planet.pl_name) {
+        foundPlanet = planet.pl_name;
+        break;
+      }
+    }
+  }
+
+  // Update hovered planet
+  if (foundPlanet !== hoveredPlanet.value) {
+    // Remove old label
+    if (hoveredPlanet.value) {
+      const oldLabel = labels.get(hoveredPlanet.value);
+      if (oldLabel && oldLabel.parentNode) {
+        oldLabel.parentNode.removeChild(oldLabel);
+      }
+      labels.delete(hoveredPlanet.value);
+    }
+
+    // Add new label
+    hoveredPlanet.value = foundPlanet;
+    if (foundPlanet) {
+      const planetMesh = scene.getObjectByName(`planet_${foundPlanet}`);
+      if (planetMesh) {
+        addLabel(foundPlanet, planetMesh.position);
+      }
+    }
+
+    // Update cursor style
+    if (foundPlanet) {
+      renderer.domElement.style.cursor = "pointer";
+    } else {
+      renderer.domElement.style.cursor = "default";
+    }
+  }
 }
+
+/**
+ * Handle planet click events
+ * Uses raycasting to detect which planet was clicked
+ * Switches to system view and zooms to that system
+ */
+function handleClick(event: MouseEvent) {
+  if (!containerRef.value) return;
+
+  // Calculate mouse position in normalized device coordinates (-1 to +1)
+  const rect = containerRef.value.getBoundingClientRect();
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+  // Update the picking ray with the camera and mouse position
+  raycaster.setFromCamera(mouse, camera);
+
+  // Calculate objects intersecting the picking ray
+  const intersects = raycaster.intersectObjects(scene.children);
+
+  // Find first planet intersection
+  for (const intersect of intersects) {
+    if (intersect.object.name && intersect.object.name.startsWith("planet_")) {
+      const planet = intersect.object.userData.planet;
+      if (planet && planet.hostname) {
+        // Switch to system view
+        viewMode.value = "system";
+        selectedSystem.value = planet.hostname;
+
+        // Animate camera to focus on the system
+        // The watch on selectedSystem will trigger renderSystemView
+        break;
+      }
+    }
+  }
+}
+
+// Import computed
+import { computed } from "vue";
 </script>

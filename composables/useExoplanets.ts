@@ -189,29 +189,22 @@ export const useExoplanets = () => {
   /**
    * Calculate habitable zone boundaries for a star
    *
-   * Uses the Stefan-Boltzmann Law to determine where liquid water could exist
-   * on a planet's surface based on stellar properties.
+   * Uses the Kopparapu et al. (2013) formulation to determine where liquid water
+   * could exist on a planet's surface based on stellar properties.
    *
    * Scientific Background:
    * - Habitable Zone: Distance range where water remains liquid (0-100°C)
    * - Too close: Runaway greenhouse effect (like Venus)
    * - Too far: Water freezes (like Mars)
    *
-   * Formula Derivation:
-   * 1. Calculate stellar luminosity relative to Sun:
-   *    L = (R_star / R_sun)² × (T_star / T_sun)⁴
-   *
-   * 2. Calculate boundaries in AU:
-   *    Inner = √(L / 1.1)   - Runaway greenhouse limit
-   *    Outer = √(L / 0.53)  - Maximum greenhouse limit
-   *
-   * Constants Explained:
-   * - 5778K: Sun's effective temperature (reference)
-   * - 1.1: Runaway greenhouse flux ratio
-   * - 0.53: Maximum greenhouse flux ratio
+   * Formula:
+   * 1. Calculate stellar luminosity: L = (R_star/R_sun)² × (T_star/T_sun)⁴
+   * 2. Calculate Seff using 4th-order polynomial in (Teff - 5780)
+   * 3. Calculate distance: d = √(L / Seff)
    *
    * Reference:
-   * Kopparapu et al. (2013) "Habitable Zones around Main-sequence Stars"
+   * Kopparapu et al. (2013) "Habitable Zones around Main-sequence Stars: New Estimates"
+   * ApJ, 765, 131 - https://iopscience.iop.org/article/10.1088/0004-637X/765/2/131
    *
    * @param {number} stellarRadius - Stellar radius in Solar radii (R☉)
    * @param {number} stellarTemp - Stellar effective temperature in Kelvin
@@ -221,15 +214,8 @@ export const useExoplanets = () => {
    * // Sun-like star (G2V)
    * const hz = calculateHabitableZone(1.0, 5778);
    * // hz.innerBoundary ≈ 0.95 AU
-   * // hz.outerBoundary ≈ 1.37 AU
+   * // hz.outerBoundary ≈ 1.67 AU
    * // hz.luminosity ≈ 1.0 L☉
-   *
-   * @example
-   * // Red dwarf (M-type)
-   * const hz = calculateHabitableZone(0.5, 3500);
-   * // hz.innerBoundary ≈ 0.18 AU (much closer!)
-   * // hz.outerBoundary ≈ 0.25 AU
-   * // hz.luminosity ≈ 0.04 L☉ (much dimmer)
    */
   const calculateHabitableZone = (
     stellarRadius: number,
@@ -237,30 +223,38 @@ export const useExoplanets = () => {
   ): HabitableZoneBoundaries => {
     /**
      * Step 1: Calculate stellar luminosity using Stefan-Boltzmann Law
-     *
-     * L = 4π R² σ T⁴
-     *
-     * Since we're calculating relative to the Sun, constants cancel out:
      * L_relative = (R_star / R_sun)² × (T_star / T_sun)⁴
-     *
-     * For the Sun: R=1, T=5778K → L=1 (by definition)
      */
     const luminosity =
       Math.pow(stellarRadius, 2) * Math.pow(stellarTemp / 5778, 4);
 
     /**
-     * Step 2: Calculate habitable zone boundaries
-     *
-     * Conservative estimate using empirical flux limits:
-     * - Inner boundary: Recent Venus (runaway greenhouse threshold)
-     * - Outer boundary: Early Mars (maximum greenhouse threshold)
+     * Step 2: Calculate Seff using Kopparapu 2013 polynomial coefficients
+     * Seff = S₀ + a×T* + b×T*² + c×T*³ + d×T*⁴
+     * where T* = Teff - 5780
      */
+    const T_star = stellarTemp - 5780;
 
-    // Inner boundary: Runaway greenhouse limit (1.1× solar flux)
-    const innerBoundary = Math.sqrt(luminosity / 1.1);
+    // Conservative inner boundary: Runaway Greenhouse
+    const Seff_inner = 1.107 +
+      1.332e-4 * T_star +
+      1.580e-8 * Math.pow(T_star, 2) +
+      -8.308e-12 * Math.pow(T_star, 3) +
+      -1.931e-15 * Math.pow(T_star, 4);
 
-    // Outer boundary: Maximum greenhouse limit (0.53× solar flux)
-    const outerBoundary = Math.sqrt(luminosity / 0.53);
+    // Conservative outer boundary: Maximum Greenhouse
+    const Seff_outer = 0.356 +
+      6.171e-5 * T_star +
+      1.698e-9 * Math.pow(T_star, 2) +
+      -3.198e-12 * Math.pow(T_star, 3) +
+      -5.575e-16 * Math.pow(T_star, 4);
+
+    /**
+     * Step 3: Calculate boundaries in AU
+     * d = √(L / Seff)
+     */
+    const innerBoundary = Math.sqrt(luminosity / Seff_inner);
+    const outerBoundary = Math.sqrt(luminosity / Seff_outer);
 
     return { innerBoundary, outerBoundary, luminosity };
   };
@@ -302,6 +296,14 @@ export const useExoplanets = () => {
     innerBoundary?: number,
     outerBoundary?: number
   ): HabitableZone => {
+    // Get planet's orbital distance (semi-major axis in AU)
+    const distance = planet.pl_orbsmax;
+
+    // Return 'too-cold' if orbital distance is missing or invalid
+    if (typeof distance !== "number" || distance <= 0) {
+      return "too-cold";
+    }
+
     // If boundaries not provided, calculate them from planet's stellar properties
     let inner = innerBoundary;
     let outer = outerBoundary;
@@ -311,7 +313,8 @@ export const useExoplanets = () => {
 
       // Return 'too-cold' if stellar data is missing (conservative choice)
       // Most planets with missing stellar data are likely inhospitable
-      if (typeof st_rad !== "number" || typeof st_teff !== "number") {
+      if (typeof st_rad !== "number" || typeof st_teff !== "number" ||
+          st_rad <= 0 || st_teff <= 0) {
         return "too-cold";
       }
 
@@ -320,9 +323,6 @@ export const useExoplanets = () => {
       inner = boundaries.innerBoundary;
       outer = boundaries.outerBoundary;
     }
-
-    // Get planet's orbital distance (semi-major axis in AU)
-    const distance = planet.pl_orbsmax;
 
     // Classify based on orbital distance relative to boundaries
     if (distance < inner) return "too-hot"; // Like Mercury or Venus
