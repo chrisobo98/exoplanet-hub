@@ -403,9 +403,18 @@
  * 6. Display color-coded results
  */
 
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useExoplanets } from "@/composables/useExoplanets";
 import type { Exoplanet } from "@/types/exoplanet";
+
+const props = withDefaults(
+  defineProps<{
+    selectedSystemName?: string;
+  }>(),
+  {
+    selectedSystemName: "",
+  }
+);
 
 // ============================================================================
 // COMPOSABLES & DATA
@@ -441,10 +450,7 @@ onMounted(async () => {
     await fetchExoplanets();
   }
 
-  // Auto-select first system if available
-  if (systems.value.length > 0) {
-    selectedSystem.value = systems.value[0];
-  }
+  syncSelectedSystem();
 });
 
 // ============================================================================
@@ -565,6 +571,24 @@ const sortedPlanets = computed(() => {
     return aVal - bVal;
   });
 });
+
+function syncSelectedSystem() {
+  if (
+    props.selectedSystemName &&
+    systems.value.includes(props.selectedSystemName)
+  ) {
+    selectedSystem.value = props.selectedSystemName;
+    return;
+  }
+
+  if (!selectedSystem.value && systems.value.length > 0) {
+    selectedSystem.value = systems.value[0];
+  }
+}
+
+watch([() => props.selectedSystemName, systems], () => {
+  syncSelectedSystem();
+}, { immediate: true });
 
 // ============================================================================
 // UTILITY FUNCTIONS

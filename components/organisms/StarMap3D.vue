@@ -106,7 +106,7 @@
           <div class="bg-black/80 backdrop-blur-md border border-purple-500/30 rounded-lg p-3 space-y-2">
             <div class="text-white text-xs font-semibold mb-2">VIEW MODE</div>
             <button
-              @click="viewMode = 'star'"
+              @click="setViewMode('star')"
               :class="[
                 'w-full px-3 py-1.5 text-sm rounded transition-colors',
                 viewMode === 'star'
@@ -117,7 +117,7 @@
               Star View
             </button>
             <button
-              @click="viewMode = 'system'"
+              @click="setViewMode('system')"
               :class="[
                 'w-full px-3 py-1.5 text-sm rounded transition-colors',
                 viewMode === 'system'
@@ -239,6 +239,22 @@ import { useExoplanets } from "@/composables/useExoplanets";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+const props = withDefaults(
+  defineProps<{
+    selectedPlanetName?: string;
+    selectedSystemName?: string;
+  }>(),
+  {
+    selectedPlanetName: "",
+    selectedSystemName: "",
+  }
+);
+
+const emit = defineEmits<{
+  (e: "planet-selected", payload: { planetName: string; systemName: string }): void;
+  (e: "selection-cleared"): void;
+}>();
+
 // ============================================================================
 // COMPOSABLE & STATE
 // ============================================================================
@@ -262,6 +278,8 @@ let raycaster: THREE.Raycaster;
 let mouse: THREE.Vector2;
 let interactablePlanets: THREE.Object3D[] = [];
 let earthOrbitAngle = 0;
+const focusedPlanetName = ref<string | null>(null);
+const lastAppliedExternalSelectionKey = ref("");
 
 // Label tracking
 const labels: Map<string, HTMLDivElement> = new Map();
@@ -314,8 +332,10 @@ onMounted(async () => {
     await fetchExoplanets();
   }
 
-  // Set first system as default
-  if (systems.value.length > 0) {
+  syncExternalSelection();
+
+  // Set first system as default only when nothing external was requested
+  if (!selectedSystem.value && systems.value.length > 0) {
     selectedSystem.value = systems.value[0];
   }
 
@@ -560,6 +580,7 @@ function renderStarView() {
   clearLabels();
   hoveredPlanet.value = null;
   interactablePlanets = [];
+  focusedPlanetName.value = null;
 
   // Add all exoplanets
   exoplanets.value.forEach((planet) => {
@@ -635,7 +656,7 @@ function renderSystemView() {
     .sort((a, b) => (a.planet.pl_orbsmax || 0) - (b.planet.pl_orbsmax || 0));
 
   // Add planets with orbits
-  sortedPlanets.forEach(({ planet, originalIndex }, index) => {
+  sortedPlanets.forEach(({ planet, originalIndex }) => {
     if (typeof planet.pl_orbsmax !== "number" || planet.pl_orbsmax <= 0) return;
 
     // Better scaling for distance: use square root with multiplier
@@ -760,6 +781,13 @@ function renderSystemView() {
   // Adjust camera
   camera.position.set(0, SYSTEM_VIEW_CAMERA_Y, SYSTEM_VIEW_CAMERA_Z);
   controls.target.set(0, 0, 0);
+
+  if (focusedPlanetName.value) {
+    const focusedPlanet = scene.getObjectByName(`planet_${focusedPlanetName.value}`);
+    if (focusedPlanet) {
+      controls.target.copy(focusedPlanet.position);
+    }
+  }
   controls.update();
 }
 
@@ -833,6 +861,44 @@ function toggleFullscreen() {
   }
 }
 
+function setViewMode(newMode: "star" | "system") {
+  viewMode.value = newMode;
+
+  if (newMode === "star") {
+    focusedPlanetName.value = null;
+    emit("selection-cleared");
+  }
+}
+
+function syncExternalSelection() {
+  const selectionKey = `${props.selectedPlanetName}::${props.selectedSystemName}`;
+  if (!selectionKey.replace("::", "") || selectionKey === lastAppliedExternalSelectionKey.value) {
+    return;
+  }
+
+  if (props.selectedPlanetName) {
+    focusedPlanetName.value = props.selectedPlanetName;
+  }
+
+  if (props.selectedSystemName && systems.value.includes(props.selectedSystemName)) {
+    selectedSystem.value = props.selectedSystemName;
+    viewMode.value = "system";
+  } else if (
+    props.selectedPlanetName &&
+    exoplanets.value.length > 0
+  ) {
+    const matchedPlanet = exoplanets.value.find(
+      (planet) => planet.pl_name === props.selectedPlanetName
+    );
+    if (matchedPlanet) {
+      selectedSystem.value = matchedPlanet.hostname;
+      viewMode.value = "system";
+    }
+  }
+
+  lastAppliedExternalSelectionKey.value = selectionKey;
+}
+
 // ============================================================================
 // WATCHERS
 // ============================================================================
@@ -851,6 +917,20 @@ watch(viewMode, (newMode) => {
 
 watch(selectedSystem, () => {
   if (viewMode.value === "system") {
+    renderSystemView();
+  }
+});
+
+watch(
+  [() => props.selectedPlanetName, () => props.selectedSystemName, exoplanets],
+  () => {
+    syncExternalSelection();
+  },
+  { immediate: true }
+);
+
+watch(focusedPlanetName, () => {
+  if (viewMode.value === "system" && selectedSystem.value) {
     renderSystemView();
   }
 });
@@ -1021,6 +1101,11 @@ function handleClick(event: MouseEvent) {
         // Switch to system view
         viewMode.value = "system";
         selectedSystem.value = planet.hostname;
+        focusedPlanetName.value = planet.pl_name;
+        emit("planet-selected", {
+          planetName: planet.pl_name,
+          systemName: planet.hostname,
+        });
 
         // Animate camera to focus on the system
         // The watch on selectedSystem will trigger renderSystemView

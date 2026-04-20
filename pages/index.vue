@@ -71,10 +71,25 @@
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 py-8">
-      <OrganismsExoplanetOverview v-if="activeTab === 'overview'" />
-      <OrganismsStarMap3D v-else-if="activeTab === '3d'" />
-      <OrganismsMissionCalculator v-else-if="activeTab === 'mission'" />
-      <OrganismsHabitableZoneAnalysis v-else-if="activeTab === 'habitable'" />
+      <OrganismsExoplanetOverview
+        v-if="activeTab === 'overview'"
+        @focus-planet="handleFocusPlanet"
+      />
+      <OrganismsStarMap3D
+        v-else-if="activeTab === '3d'"
+        :selected-planet-name="selectedPlanetName"
+        :selected-system-name="selectedSystemName"
+        @planet-selected="handlePlanetSelected"
+        @selection-cleared="handleSelectionCleared"
+      />
+      <OrganismsMissionCalculator
+        v-else-if="activeTab === 'mission'"
+        :selected-planet-name="selectedPlanetName"
+      />
+      <OrganismsHabitableZoneAnalysis
+        v-else-if="activeTab === 'habitable'"
+        :selected-system-name="selectedSystemName"
+      />
     </div>
   </div>
 </template>
@@ -84,9 +99,16 @@ import { ref, computed } from 'vue';
 import { Map, Globe, Rocket, Leaf, ChevronDown } from 'lucide-vue-next';
 
 type Tab = 'overview' | '3d' | 'mission' | 'habitable';
+type FocusPlanetPayload = {
+  planetName: string;
+  systemName: string;
+  targetTab: Exclude<Tab, 'overview'>;
+};
 
 const activeTab = ref<Tab>('overview');
 const mobileMenuOpen = ref(false);
+const selectedPlanetName = ref('');
+const selectedSystemName = ref('');
 
 const tabs = [
   { value: 'overview' as Tab, label: 'Overview', icon: Map },
@@ -106,6 +128,23 @@ const currentTabIcon = computed(() => {
 const selectTab = (tab: Tab) => {
   activeTab.value = tab;
   mobileMenuOpen.value = false;
+};
+
+const handleFocusPlanet = (payload: FocusPlanetPayload) => {
+  selectedPlanetName.value = payload.planetName;
+  selectedSystemName.value = payload.systemName;
+  activeTab.value = payload.targetTab;
+  mobileMenuOpen.value = false;
+};
+
+const handlePlanetSelected = (payload: { planetName: string; systemName: string }) => {
+  selectedPlanetName.value = payload.planetName;
+  selectedSystemName.value = payload.systemName;
+};
+
+const handleSelectionCleared = () => {
+  selectedPlanetName.value = '';
+  selectedSystemName.value = '';
 };
 </script>
   

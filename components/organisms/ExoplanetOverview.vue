@@ -227,6 +227,9 @@
                   {{ sortDirection === 'asc' ? '↑' : '↓' }}
                 </span>
               </th>
+              <th class="text-left py-3 px-4 text-purple-200">
+                Open In
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -279,6 +282,29 @@
 
             <!-- Discovery Year -->
             <td class="py-3 px-4 text-purple-200">{{ planet.disc_year }}</td>
+
+            <td class="py-3 px-4">
+              <div class="flex flex-wrap gap-2">
+                <button
+                  class="px-2.5 py-1 text-xs font-medium rounded-md bg-cyan-500/20 text-cyan-100 border border-cyan-400/30 hover:bg-cyan-500/30 transition-colors"
+                  @click="focusPlanet(planet, '3d')"
+                >
+                  3D Map
+                </button>
+                <button
+                  class="px-2.5 py-1 text-xs font-medium rounded-md bg-purple-500/20 text-purple-100 border border-purple-400/30 hover:bg-purple-500/30 transition-colors"
+                  @click="focusPlanet(planet, 'mission')"
+                >
+                  Mission
+                </button>
+                <button
+                  class="px-2.5 py-1 text-xs font-medium rounded-md bg-emerald-500/20 text-emerald-100 border border-emerald-400/30 hover:bg-emerald-500/30 transition-colors"
+                  @click="focusPlanet(planet, 'habitable')"
+                >
+                  Habitable
+                </button>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -343,6 +369,14 @@ import { ref, computed, watch, onMounted } from "vue";
 import { Filter } from "lucide-vue-next";
 import { useExoplanets } from "@/composables/useExoplanets";
 import type { Exoplanet } from "@/types/exoplanet";
+
+const emit = defineEmits<{
+  (e: "focus-planet", payload: {
+    planetName: string;
+    systemName: string;
+    targetTab: "3d" | "mission" | "habitable";
+  }): void;
+}>();
 
 // ============================================================================
 // COMPOSABLES & DATA
@@ -622,6 +656,17 @@ function sortBy(column: string) {
     sortColumn.value = column;
     sortDirection.value = "asc";
   }
+}
+
+function focusPlanet(
+  planet: Exoplanet,
+  targetTab: "3d" | "mission" | "habitable"
+) {
+  emit("focus-planet", {
+    planetName: planet.pl_name,
+    systemName: planet.hostname,
+    targetTab,
+  });
 }
 
 /**

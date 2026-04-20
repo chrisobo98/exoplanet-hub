@@ -383,9 +383,18 @@
  * - Computed properties for derived values
  * - Leverages useExoplanets composable for data
  */
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { Clock, Rocket } from "lucide-vue-next";
 import { useExoplanets } from "@/composables/useExoplanets";
+
+const props = withDefaults(
+  defineProps<{
+    selectedPlanetName?: string;
+  }>(),
+  {
+    selectedPlanetName: "",
+  }
+);
 
 // ============================================================================
 // COMPOSABLE & STATE
@@ -433,10 +442,7 @@ onMounted(async () => {
     await fetchExoplanets();
   }
 
-  // Auto-select first planet if data available
-  if (exoplanets.value.length > 0) {
-    selectedPlanetName.value = exoplanets.value[0].pl_name;
-  }
+  syncSelectedPlanet();
 });
 
 // ============================================================================
@@ -495,4 +501,22 @@ const selectedPlanet = computed(() => {
 const distance = computed(() => {
   return (selectedPlanet.value?.sy_dist ?? 0) * 3.262; // parsecs to light years
 });
+
+function syncSelectedPlanet() {
+  if (
+    props.selectedPlanetName &&
+    exoplanets.value.some((planet) => planet.pl_name === props.selectedPlanetName)
+  ) {
+    selectedPlanetName.value = props.selectedPlanetName;
+    return;
+  }
+
+  if (!selectedPlanetName.value && exoplanets.value.length > 0) {
+    selectedPlanetName.value = exoplanets.value[0].pl_name;
+  }
+}
+
+watch([() => props.selectedPlanetName, exoplanets], () => {
+  syncSelectedPlanet();
+}, { immediate: true });
 </script>
