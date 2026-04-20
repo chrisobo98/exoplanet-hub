@@ -66,7 +66,8 @@
                 <p><strong>Coordinates:</strong> RA/Dec/Distance → Cartesian (X, Y, Z)</p>
                 <p><strong>Star View Filter:</strong> Only showing systems >30 parsecs (~98 ly) from Sun</p>
                 <p><strong>Star View Display:</strong> Radial distances use a non-linear display scale while preserving sky direction</p>
-                <p><strong>System View Scaling:</strong> Square root function (√AU × 40)</p>
+                <p><strong>Solar Reference:</strong> Earth orbits our Sun in Star View for scale context</p>
+                <p><strong>System View Scaling:</strong> Non-linear orbit display with star clearance plus √AU spacing</p>
                 <p><strong>Reference:</strong> <a href="https://iopscience.iop.org/article/10.1088/0004-637X/765/2/131" target="_blank" class="underline">ApJ 765, 131 (2013)</a></p>
                 <p class="text-yellow-200 mt-2">
                   <strong>Contributing:</strong> This is open source! Help us improve the calculations on GitHub.
@@ -260,6 +261,7 @@ let animationFrameId: number;
 let raycaster: THREE.Raycaster;
 let mouse: THREE.Vector2;
 let interactablePlanets: THREE.Object3D[] = [];
+let earthOrbitAngle = 0;
 
 // Label tracking
 const labels: Map<string, HTMLDivElement> = new Map();
@@ -276,15 +278,19 @@ const showOrbits = ref(true);
 const showHabitableZone = ref(true);
 
 const AU_SCALING_FACTOR = 40;
-const MIN_SYSTEM_ORBIT_DISTANCE = 25;
 const STAR_VIEW_PLANET_RADIUS = 1.2;
 const STAR_VIEW_MIN_DISTANCE_PARSECS = 30;
 const STAR_VIEW_BASE_DISTANCE = 140;
 const STAR_VIEW_DISTANCE_CURVE = 34;
 const STAR_VIEW_CAMERA_Y = 80;
 const STAR_VIEW_CAMERA_Z = 700;
+const SYSTEM_VIEW_STAR_CLEARANCE = 22;
+const SYSTEM_VIEW_DISTANCE_CURVE = 36;
 const SYSTEM_VIEW_CAMERA_Y = 150;
 const SYSTEM_VIEW_CAMERA_Z = 200;
+const EARTH_ORBIT_AU = 1;
+const EARTH_ORBIT_SPEED = 0.01;
+const EARTH_RADIUS = 1.1;
 const STAR_VIEW_OBJECT_PREFIXES = ["planet_", "sun_", "star_field"];
 const SYSTEM_VIEW_OBJECT_PREFIXES = ["planet_", "system_", "orbit_", "hz_"];
 
@@ -407,11 +413,9 @@ function initThreeJS() {
   // Add star field
   addStarField();
 
-  // Add Sun at origin with habitable zone
+  // Add Sun at origin with Earth reference orbit
   addSun();
-  if (showHabitableZone.value) {
-    addSunHabitableZone();
-  }
+  addEarthReferenceOrbit();
 
   // Render based on view mode
   renderStarView();
@@ -453,6 +457,10 @@ function scaleDistance(au: number) {
   return Math.sqrt(au) * AU_SCALING_FACTOR;
 }
 
+function scaleSystemOrbitDistance(au: number) {
+  return SYSTEM_VIEW_STAR_CLEARANCE + Math.sqrt(au) * SYSTEM_VIEW_DISTANCE_CURVE;
+}
+
 function scaleStarViewPosition(x: number, y: number, z: number) {
   const distance = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
   if (distance === 0) {
@@ -485,9 +493,7 @@ function ensureStarViewSceneObjects() {
 
   addStarField();
   addSun();
-  if (showHabitableZone.value) {
-    addSunHabitableZone();
-  }
+  addEarthReferenceOrbit();
 }
 
 // ============================================================================
@@ -513,95 +519,35 @@ function addSun() {
   scene.add(glow);
 }
 
-function addSunHabitableZone() {
-  // Our Sun's habitable zone (G2V star: R=1.0, T=5778K)
-  // Inner: ~0.95 AU, Outer: ~1.67 AU
-  const hzInner = 0.95;
-  const hzOuter = 1.67;
+function addEarthReferenceOrbit() {
+  const orbitRadius = scaleDistance(EARTH_ORBIT_AU);
 
-  const hzInnerDist = scaleDistance(hzInner);
-  const hzOuterDist = scaleDistance(hzOuter);
-
-  // Create shaded ring mesh
-  const ringShape = new THREE.Shape();
-
-  // Outer circle
+  const orbitGeometry = new THREE.BufferGeometry();
+  const orbitPoints = [];
   for (let i = 0; i <= 64; i++) {
     const angle = (i / 64) * Math.PI * 2;
-    const x = Math.cos(angle) * hzOuterDist;
-    const y = Math.sin(angle) * hzOuterDist;
-    if (i === 0) {
-      ringShape.moveTo(x, y);
-    } else {
-      ringShape.lineTo(x, y);
-    }
+    orbitPoints.push(Math.cos(angle) * orbitRadius, 0, Math.sin(angle) * orbitRadius);
   }
-
-  // Inner circle (hole)
-  const hole = new THREE.Path();
-  for (let i = 0; i <= 64; i++) {
-    const angle = (i / 64) * Math.PI * 2;
-    const x = Math.cos(angle) * hzInnerDist;
-    const y = Math.sin(angle) * hzInnerDist;
-    if (i === 0) {
-      hole.moveTo(x, y);
-    } else {
-      hole.lineTo(x, y);
-    }
-  }
-  ringShape.holes.push(hole);
-
-  // Create ring mesh
-  const ringGeometry = new THREE.ShapeGeometry(ringShape);
-  const ringMaterial = new THREE.MeshBasicMaterial({
-    color: 0xfdb813, // Yellow/gold for our Sun's HZ
-    transparent: true,
-    opacity: 0.15,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-  ringMesh.rotation.x = -Math.PI / 2;
-  ringMesh.position.y = 0.1;
-  ringMesh.name = "sun_hz_ring";
-  scene.add(ringMesh);
-
-  // Boundary lines
-  const hzLineMaterial = new THREE.LineBasicMaterial({
-    color: 0xfdb813,
-    transparent: true,
-    opacity: 0.4,
-  });
-
-  // Inner boundary
-  const innerGeometry = new THREE.BufferGeometry();
-  const innerPoints = [];
-  for (let i = 0; i <= 64; i++) {
-    const a = (i / 64) * Math.PI * 2;
-    innerPoints.push(Math.cos(a) * hzInnerDist, 0, Math.sin(a) * hzInnerDist);
-  }
-  innerGeometry.setAttribute(
+  orbitGeometry.setAttribute(
     "position",
-    new THREE.Float32BufferAttribute(innerPoints, 3)
+    new THREE.Float32BufferAttribute(orbitPoints, 3)
   );
-  const innerLine = new THREE.Line(innerGeometry, hzLineMaterial);
-  innerLine.name = "sun_hz_inner";
-  scene.add(innerLine);
 
-  // Outer boundary
-  const outerGeometry = new THREE.BufferGeometry();
-  const outerPoints = [];
-  for (let i = 0; i <= 64; i++) {
-    const a = (i / 64) * Math.PI * 2;
-    outerPoints.push(Math.cos(a) * hzOuterDist, 0, Math.sin(a) * hzOuterDist);
-  }
-  outerGeometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(outerPoints, 3)
-  );
-  const outerLine = new THREE.Line(outerGeometry, hzLineMaterial);
-  outerLine.name = "sun_hz_outer";
-  scene.add(outerLine);
+  const orbitMaterial = new THREE.LineBasicMaterial({
+    color: 0x4b9fff,
+    transparent: true,
+    opacity: 0.45,
+  });
+  const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+  orbitLine.name = "sun_earth_orbit";
+  scene.add(orbitLine);
+
+  const earthGeometry = new THREE.SphereGeometry(EARTH_RADIUS, 16, 16);
+  const earthMaterial = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+  const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+  earth.position.set(orbitRadius, 0, 0);
+  earth.name = "sun_earth";
+  scene.add(earth);
 }
 
 // ============================================================================
@@ -670,7 +616,13 @@ function renderSystemView() {
   // Get habitable zone if needed
   let hzInner = 0;
   let hzOuter = 0;
-  const refPlanet = systemPlanets.find(p => p.st_rad && p.st_teff);
+  const refPlanet = systemPlanets.find(
+    (p) =>
+      typeof p.st_rad === "number" &&
+      p.st_rad > 0 &&
+      typeof p.st_teff === "number" &&
+      p.st_teff > 0
+  );
   if (refPlanet && refPlanet.st_rad && refPlanet.st_teff) {
     const hz = calculateHabitableZone(refPlanet.st_rad, refPlanet.st_teff);
     hzInner = hz.innerBoundary;
@@ -688,7 +640,7 @@ function renderSystemView() {
 
     // Better scaling for distance: use square root with multiplier
     // This spreads out close planets while keeping distant ones visible
-    const distance = Math.max(MIN_SYSTEM_ORBIT_DISTANCE, scaleDistance(planet.pl_orbsmax));
+    const distance = scaleSystemOrbitDistance(planet.pl_orbsmax);
 
     const zone = isInHabitableZone(planet);
 
@@ -737,48 +689,24 @@ function renderSystemView() {
   });
 
   // Add habitable zone visualization if enabled
-  if (showHabitableZone.value && hzInner > 0 && hzOuter > 0) {
+  if (
+    showHabitableZone.value &&
+    Number.isFinite(hzInner) &&
+    Number.isFinite(hzOuter) &&
+    hzInner > 0 &&
+    hzOuter > hzInner
+  ) {
     // Use same square root scaling as planets for consistency
     // Don't apply minimum - this was causing the ring to collapse to a line
-    const hzInnerDist = scaleDistance(hzInner);
-    const hzOuterDist = scaleDistance(hzOuter);
+    const hzInnerDist = scaleSystemOrbitDistance(hzInner);
+    const hzOuterDist = scaleSystemOrbitDistance(hzOuter);
 
     // Only show ring if there's meaningful space between boundaries (at least 3 units)
     const ringVisible = (hzOuterDist - hzInnerDist) > 3;
 
     // Only create shaded ring if it's wide enough to be visible
     if (ringVisible) {
-      // Create shaded ring mesh for habitable zone
-      const ringShape = new THREE.Shape();
-
-      // Outer circle
-      for (let i = 0; i <= 64; i++) {
-        const angle = (i / 64) * Math.PI * 2;
-        const x = Math.cos(angle) * hzOuterDist;
-        const y = Math.sin(angle) * hzOuterDist;
-        if (i === 0) {
-          ringShape.moveTo(x, y);
-        } else {
-          ringShape.lineTo(x, y);
-        }
-      }
-
-      // Inner circle (hole)
-      const hole = new THREE.Path();
-      for (let i = 0; i <= 64; i++) {
-        const angle = (i / 64) * Math.PI * 2;
-        const x = Math.cos(angle) * hzInnerDist;
-        const y = Math.sin(angle) * hzInnerDist;
-        if (i === 0) {
-          hole.moveTo(x, y);
-        } else {
-          hole.lineTo(x, y);
-        }
-      }
-      ringShape.holes.push(hole);
-
-      // Create mesh from shape
-      const ringGeometry = new THREE.ShapeGeometry(ringShape);
+      const ringGeometry = new THREE.RingGeometry(hzInnerDist, hzOuterDist, 96);
       const ringMaterial = new THREE.MeshBasicMaterial({
         color: 0x22c55e,
         transparent: true,
@@ -830,7 +758,7 @@ function renderSystemView() {
   }
 
   // Adjust camera
-  camera.position.set(0, 150, 200);
+  camera.position.set(0, SYSTEM_VIEW_CAMERA_Y, SYSTEM_VIEW_CAMERA_Z);
   controls.target.set(0, 0, 0);
   controls.update();
 }
@@ -843,6 +771,19 @@ function animate() {
   animationFrameId = requestAnimationFrame(animate);
 
   controls.update();
+
+  if (viewMode.value === "star") {
+    const earth = scene.getObjectByName("sun_earth");
+    if (earth) {
+      earthOrbitAngle += EARTH_ORBIT_SPEED;
+      const orbitRadius = scaleDistance(EARTH_ORBIT_AU);
+      earth.position.set(
+        Math.cos(earthOrbitAngle) * orbitRadius,
+        0,
+        Math.sin(earthOrbitAngle) * orbitRadius
+      );
+    }
+  }
 
   // Update label for hovered planet only
   if (showLabels.value && hoveredPlanet.value) {
@@ -917,19 +858,6 @@ watch(selectedSystem, () => {
 watch(showHabitableZone, (newValue) => {
   if (viewMode.value === "system") {
     renderSystemView();
-  } else {
-    // Star View - toggle Sun's habitable zone
-    const sunHZObjects = scene.children.filter(
-      (child) => child.name && child.name.startsWith("sun_hz_")
-    );
-
-    if (newValue && sunHZObjects.length === 0) {
-      // Add Sun's HZ
-      addSunHabitableZone();
-    } else if (!newValue && sunHZObjects.length > 0) {
-      // Remove Sun's HZ
-      sunHZObjects.forEach((obj) => scene.remove(obj));
-    }
   }
 });
 
