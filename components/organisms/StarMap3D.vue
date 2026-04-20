@@ -258,6 +258,7 @@ let controls: OrbitControls;
 let animationFrameId: number;
 let raycaster: THREE.Raycaster;
 let mouse: THREE.Vector2;
+let interactablePlanets: THREE.Object3D[] = [];
 
 // Label tracking
 const labels: Map<string, HTMLDivElement> = new Map();
@@ -272,6 +273,11 @@ const selectedSystem = ref<string>("");
 const showLabels = ref(true);
 const showOrbits = ref(true);
 const showHabitableZone = ref(true);
+
+const AU_SCALING_FACTOR = 40;
+const MIN_SYSTEM_ORBIT_DISTANCE = 25;
+const STAR_VIEW_OBJECT_PREFIXES = ["planet_", "sun_", "star_field"];
+const SYSTEM_VIEW_OBJECT_PREFIXES = ["planet_", "system_", "orbit_", "hz_"];
 
 // ============================================================================
 // COMPUTED SYSTEMS
@@ -333,6 +339,18 @@ onUnmounted(() => {
 function initThreeJS() {
   if (!containerRef.value) return;
 
+  if (renderer) {
+    renderer.domElement.removeEventListener("click", handleClick);
+    renderer.domElement.removeEventListener("mousemove", handleMouseMove);
+    renderer.dispose();
+    if (renderer.domElement.parentNode) {
+      renderer.domElement.parentNode.removeChild(renderer.domElement);
+    }
+  }
+  if (controls) {
+    controls.dispose();
+  }
+
   const width = containerRef.value.clientWidth;
   const height = containerRef.value.clientHeight;
 
@@ -362,9 +380,11 @@ function initThreeJS() {
   mouse = new THREE.Vector2();
 
   // Add click handler
+  renderer.domElement.removeEventListener("click", handleClick);
   renderer.domElement.addEventListener("click", handleClick);
 
   // Add mousemove handler for hover detection
+  renderer.domElement.removeEventListener("mousemove", handleMouseMove);
   renderer.domElement.addEventListener("mousemove", handleMouseMove);
 
   // Add lights
@@ -416,7 +436,30 @@ function addStarField() {
   });
 
   const stars = new THREE.Points(starsGeometry, starsMaterial);
+  stars.name = "star_field";
   scene.add(stars);
+}
+
+function scaleDistance(au: number) {
+  return Math.sqrt(au) * AU_SCALING_FACTOR;
+}
+
+function removeSceneObjectsByPrefixes(prefixes: string[]) {
+  const objectsToRemove = scene.children.filter(
+    (child) => child.name && prefixes.some((prefix) => child.name.startsWith(prefix))
+  );
+
+  objectsToRemove.forEach((obj) => scene.remove(obj));
+}
+
+function ensureStarViewSceneObjects() {
+  removeSceneObjectsByPrefixes(["star_field", "sun_"]);
+
+  addStarField();
+  addSun();
+  if (showHabitableZone.value) {
+    addSunHabitableZone();
+  }
 }
 
 // ============================================================================
@@ -427,7 +470,7 @@ function addSun() {
   const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
   const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xfdb813 });
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-  sun.name = "Sun";
+  sun.name = "sun_core";
   scene.add(sun);
 
   // Add glow
@@ -438,6 +481,7 @@ function addSun() {
     opacity: 0.3,
   });
   const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+  glow.name = "sun_glow";
   scene.add(glow);
 }
 
@@ -447,8 +491,8 @@ function addSunHabitableZone() {
   const hzInner = 0.95;
   const hzOuter = 1.67;
 
-  const hzInnerDist = Math.sqrt(hzInner) * 40;
-  const hzOuterDist = Math.sqrt(hzOuter) * 40;
+  const hzInnerDist = scaleDistance(hzInner);
+  const hzOuterDist = scaleDistance(hzOuter);
 
   // Create shaded ring mesh
   const ringShape = new THREE.Shape();
@@ -537,17 +581,15 @@ function addSunHabitableZone() {
 // ============================================================================
 
 function renderStarView() {
-  // Clear existing planets and labels
-  const planetsToRemove = scene.children.filter(
-    (child) => child.name && child.name.startsWith("planet_")
-  );
-  planetsToRemove.forEach((planet) => scene.remove(planet));
+  removeSceneObjectsByPrefixes(SYSTEM_VIEW_OBJECT_PREFIXES);
+  ensureStarViewSceneObjects();
   clearLabels();
   hoveredPlanet.value = null;
+  interactablePlanets = [];
 
   // Add all exoplanets
   exoplanets.value.forEach((planet) => {
-    if (!planet.x || !planet.y || !planet.z) return;
+    if (planet.x == null || planet.y == null || planet.z == null) return;
 
     // Calculate distance from Sun to filter out planets that are too close
     const distanceFromSun = Math.sqrt(planet.x ** 2 + planet.y ** 2 + planet.z ** 2);
@@ -570,17 +612,16 @@ function renderStarView() {
     mesh.userData = { planet }; // Store planet data for raycasting
 
     scene.add(mesh);
+    interactablePlanets.push(mesh);
   });
 }
 
 function renderSystemView() {
-  // Clear existing objects and labels
-  const toRemove = scene.children.filter(
-    (child) => child.name && (child.name.startsWith("planet_") || child.name.startsWith("orbit_"))
-  );
-  toRemove.forEach((obj) => scene.remove(obj));
+  removeSceneObjectsByPrefixes(STAR_VIEW_OBJECT_PREFIXES);
+  removeSceneObjectsByPrefixes(SYSTEM_VIEW_OBJECT_PREFIXES);
   clearLabels();
   hoveredPlanet.value = null;
+  interactablePlanets = [];
 
   // Get planets in selected system
   const systemPlanets = exoplanets.value.filter(
@@ -594,7 +635,7 @@ function renderSystemView() {
   const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500 });
   const star = new THREE.Mesh(starGeometry, starMaterial);
   star.position.set(0, 0, 0);
-  star.name = "planet_star";
+  star.name = "system_star";
   scene.add(star);
 
   // Get habitable zone if needed
@@ -618,7 +659,7 @@ function renderSystemView() {
 
     // Better scaling for distance: use square root with multiplier
     // This spreads out close planets while keeping distant ones visible
-    const distance = Math.max(25, Math.sqrt(planet.pl_orbsmax) * 40);
+    const distance = Math.max(MIN_SYSTEM_ORBIT_DISTANCE, scaleDistance(planet.pl_orbsmax));
 
     const zone = isInHabitableZone(planet);
 
@@ -641,6 +682,7 @@ function renderSystemView() {
     mesh.userData = { planet };
 
     scene.add(mesh);
+    interactablePlanets.push(mesh);
 
     // Add orbit line if enabled
     if (showOrbits.value) {
@@ -669,8 +711,8 @@ function renderSystemView() {
   if (showHabitableZone.value && hzInner > 0 && hzOuter > 0) {
     // Use same square root scaling as planets for consistency
     // Don't apply minimum - this was causing the ring to collapse to a line
-    const hzInnerDist = Math.sqrt(hzInner) * 40;
-    const hzOuterDist = Math.sqrt(hzOuter) * 40;
+    const hzInnerDist = scaleDistance(hzInner);
+    const hzOuterDist = scaleDistance(hzOuter);
 
     // Only show ring if there's meaningful space between boundaries (at least 3 units)
     const ringVisible = (hzOuterDist - hzInnerDist) > 3;
@@ -718,7 +760,7 @@ function renderSystemView() {
       const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
       ringMesh.rotation.x = -Math.PI / 2; // Rotate to lie flat
       ringMesh.position.y = 0.1; // Slightly above orbital plane to be visible
-      ringMesh.name = "orbit_hz_ring";
+      ringMesh.name = "hz_ring";
       scene.add(ringMesh);
     }
 
@@ -739,7 +781,7 @@ function renderSystemView() {
       opacity: 0.8,
     });
     const innerLine = new THREE.Line(innerGeometry, hzLineMaterial);
-    innerLine.name = "orbit_hz_inner";
+    innerLine.name = "hz_inner";
     scene.add(innerLine);
 
     // Outer boundary line
@@ -754,7 +796,7 @@ function renderSystemView() {
       new THREE.Float32BufferAttribute(outerPoints, 3)
     );
     const outerLine = new THREE.Line(outerGeometry, hzLineMaterial);
-    outerLine.name = "orbit_hz_outer";
+    outerLine.name = "hz_outer";
     scene.add(outerLine);
   }
 
@@ -907,11 +949,13 @@ function addLabel(planetName: string, position: THREE.Vector3) {
  * Converts 3D world position to 2D screen coordinates
  */
 function updateLabelPosition(label: HTMLDivElement, position: THREE.Vector3) {
+  if (!containerRef.value) return;
+
   const vector = position.clone();
   vector.project(camera);
 
-  const x = (vector.x * 0.5 + 0.5) * containerRef.value!.clientWidth;
-  const y = (-(vector.y * 0.5) + 0.5) * containerRef.value!.clientHeight;
+  const x = (vector.x * 0.5 + 0.5) * containerRef.value.clientWidth;
+  const y = (-(vector.y * 0.5) + 0.5) * containerRef.value.clientHeight;
 
   label.style.left = `${x}px`;
   label.style.top = `${y}px`;
@@ -950,7 +994,7 @@ function handleMouseMove(event: MouseEvent) {
   raycaster.setFromCamera(mouse, camera);
 
   // Calculate objects intersecting the picking ray
-  const intersects = raycaster.intersectObjects(scene.children);
+  const intersects = raycaster.intersectObjects(interactablePlanets, true);
 
   // Find first planet intersection
   let foundPlanet: string | null = null;
@@ -1010,7 +1054,7 @@ function handleClick(event: MouseEvent) {
   raycaster.setFromCamera(mouse, camera);
 
   // Calculate objects intersecting the picking ray
-  const intersects = raycaster.intersectObjects(scene.children);
+  const intersects = raycaster.intersectObjects(interactablePlanets, true);
 
   // Find first planet intersection
   for (const intersect of intersects) {

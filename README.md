@@ -362,23 +362,6 @@ For detailed scientific formulas, references, and contribution guidelines:
   - Known limitations and areas for improvement
   - How to contribute calculation improvements
 
-## 🌟 Why Choose Exoplanet Discovery Hub?
-
-### Competitive Analysis
-
-| Feature | This Project | NASA Exoplanet Archive | Eyes on Exoplanets | Exoplanet.eu |
-|---------|--------------|------------------------|-------------------|--------------|
-| **UI/UX** | Modern, web-based | Professional scientific interface | Immersive 3D experience | Research-focused tables |
-| **3D Visualization** | ✅ WebGL browser-based, Two view modes | ✅ 3D thumbnails per planet | ✅ Full 3D (desktop app) | ❌ 2D plots only |
-| **Interactivity** | Click, drag, zoom, hover labels | Click for individual views | Fly through space | Plot configuration |
-| **Mission Planning** | ✅ Travel time calculator | ❌ Not available | ✅ Spacecraft views | ❌ Not available |
-| **Habitable Zone** | ✅ Kopparapu 2013 formulas + viz | Data available in tables | Visual indicators | Data available |
-| **Filtering** | Real-time multi-parameter | Advanced TAP queries | Mission-based | Multi-parameter |
-| **Mobile Support** | ✅ Fully responsive | Desktop-optimized | Desktop-only app | Desktop-optimized |
-| **Data Scope** | TESS discoveries (~700+) | All confirmed (6000+) | All confirmed (5500+) | All confirmed (5000+) |
-| **Installation** | None (web-based) | None (web-based) | Desktop download required | None (web-based) |
-| **Open Source** | ✅ MIT License | ❌ Closed | ❌ Closed | ❌ Closed |
-
 **Sources**:
 - [NASA Exoplanet Catalog](https://science.nasa.gov/exoplanets/exoplanet-catalog/)
 - [Eyes on Exoplanets](https://science.nasa.gov/eyes/)
