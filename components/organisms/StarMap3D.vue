@@ -231,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
 import { Info, RotateCcw, Maximize2 } from "lucide-vue-next";
 import { useExoplanets } from "@/composables/useExoplanets";
 import * as THREE from "three";
@@ -1028,7 +1028,4 @@ function handleClick(event: MouseEvent) {
     }
   }
 }
-
-// Import computed
-import { computed } from "vue";
 </script>
