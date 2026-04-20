@@ -54,8 +54,8 @@
           </h3>
           <div class="text-yellow-100 text-sm space-y-2">
             <p>
-              <strong>Known Issue:</strong> Some spatial calculations are still being refined.
-              Planets in Star View may appear closer to our Sun than scientifically accurate.
+              <strong>Known Issue:</strong> Star View preserves each system's direction in space,
+              but radial distances are non-linearly expanded so dense nearby regions do not overlap.
             </p>
             <details class="mt-2">
               <summary class="cursor-pointer text-yellow-200 hover:text-yellow-100 font-medium">
@@ -65,6 +65,7 @@
                 <p><strong>Habitable Zone:</strong> Kopparapu et al. (2013) formulation</p>
                 <p><strong>Coordinates:</strong> RA/Dec/Distance → Cartesian (X, Y, Z)</p>
                 <p><strong>Star View Filter:</strong> Only showing systems >30 parsecs (~98 ly) from Sun</p>
+                <p><strong>Star View Display:</strong> Radial distances use a non-linear display scale while preserving sky direction</p>
                 <p><strong>System View Scaling:</strong> Square root function (√AU × 40)</p>
                 <p><strong>Reference:</strong> <a href="https://iopscience.iop.org/article/10.1088/0004-637X/765/2/131" target="_blank" class="underline">ApJ 765, 131 (2013)</a></p>
                 <p class="text-yellow-200 mt-2">
@@ -276,6 +277,14 @@ const showHabitableZone = ref(true);
 
 const AU_SCALING_FACTOR = 40;
 const MIN_SYSTEM_ORBIT_DISTANCE = 25;
+const STAR_VIEW_PLANET_RADIUS = 1.2;
+const STAR_VIEW_MIN_DISTANCE_PARSECS = 30;
+const STAR_VIEW_BASE_DISTANCE = 140;
+const STAR_VIEW_DISTANCE_CURVE = 34;
+const STAR_VIEW_CAMERA_Y = 80;
+const STAR_VIEW_CAMERA_Z = 700;
+const SYSTEM_VIEW_CAMERA_Y = 150;
+const SYSTEM_VIEW_CAMERA_Z = 200;
 const STAR_VIEW_OBJECT_PREFIXES = ["planet_", "sun_", "star_field"];
 const SYSTEM_VIEW_OBJECT_PREFIXES = ["planet_", "system_", "orbit_", "hz_"];
 
@@ -360,7 +369,7 @@ function initThreeJS() {
 
   // Create camera
   camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
-  camera.position.set(0, 50, 200);
+  camera.position.set(0, STAR_VIEW_CAMERA_Y, STAR_VIEW_CAMERA_Z);
 
   // Create renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -373,7 +382,7 @@ function initThreeJS() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.05;
   controls.minDistance = 10;
-  controls.maxDistance = 1000;
+  controls.maxDistance = 2500;
 
   // Create raycaster for click detection
   raycaster = new THREE.Raycaster();
@@ -442,6 +451,25 @@ function addStarField() {
 
 function scaleDistance(au: number) {
   return Math.sqrt(au) * AU_SCALING_FACTOR;
+}
+
+function scaleStarViewPosition(x: number, y: number, z: number) {
+  const distance = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+  if (distance === 0) {
+    return new THREE.Vector3(0, 0, 0);
+  }
+
+  // Preserve direction from the Sun while spreading nearby systems more aggressively.
+  const distanceBeyondThreshold = Math.max(
+    0,
+    distance - STAR_VIEW_MIN_DISTANCE_PARSECS
+  );
+  const displayDistance =
+    STAR_VIEW_BASE_DISTANCE +
+    Math.sqrt(distanceBeyondThreshold) * STAR_VIEW_DISTANCE_CURVE;
+  const scale = displayDistance / distance;
+
+  return new THREE.Vector3(x * scale, z * scale, -y * scale);
 }
 
 function removeSceneObjectsByPrefixes(prefixes: string[]) {
@@ -596,18 +624,19 @@ function renderStarView() {
 
     // Filter out planets within 30 parsecs (about 98 light years) to prevent crowding near Sun
     // This gives better spacing and prevents visual overlap
-    if (distanceFromSun < 30) return;
+    if (distanceFromSun < STAR_VIEW_MIN_DISTANCE_PARSECS) return;
 
     const zone = isInHabitableZone(planet);
     let color = 0x3b82f6; // blue (too-cold) default
     if (zone === "habitable") color = 0x22c55e; // green
     else if (zone === "too-hot") color = 0xef4444; // red
 
-    const geometry = new THREE.SphereGeometry(2, 16, 16);
+    const geometry = new THREE.SphereGeometry(STAR_VIEW_PLANET_RADIUS, 16, 16);
     const material = new THREE.MeshBasicMaterial({ color });
     const mesh = new THREE.Mesh(geometry, material);
+    const displayPosition = scaleStarViewPosition(planet.x, planet.y, planet.z);
 
-    mesh.position.set(planet.x, planet.z, -planet.y);
+    mesh.position.copy(displayPosition);
     mesh.name = `planet_${planet.pl_name}`;
     mesh.userData = { planet }; // Store planet data for raycasting
 
@@ -844,10 +873,10 @@ function handleResize() {
 
 function resetCamera() {
   if (viewMode.value === "star") {
-    camera.position.set(0, 50, 200);
+    camera.position.set(0, STAR_VIEW_CAMERA_Y, STAR_VIEW_CAMERA_Z);
     controls.target.set(0, 0, 0);
   } else {
-    camera.position.set(0, 150, 200);
+    camera.position.set(0, SYSTEM_VIEW_CAMERA_Y, SYSTEM_VIEW_CAMERA_Z);
     controls.target.set(0, 0, 0);
   }
   controls.update();
@@ -870,10 +899,10 @@ function toggleFullscreen() {
 watch(viewMode, (newMode) => {
   if (newMode === "star") {
     renderStarView();
-    camera.position.set(0, 50, 200);
+    camera.position.set(0, STAR_VIEW_CAMERA_Y, STAR_VIEW_CAMERA_Z);
   } else {
     renderSystemView();
-    camera.position.set(0, 150, 200);
+    camera.position.set(0, SYSTEM_VIEW_CAMERA_Y, SYSTEM_VIEW_CAMERA_Z);
   }
   controls.target.set(0, 0, 0);
   controls.update();
